@@ -165,7 +165,7 @@ class EventConverter {
                             id = event.id,
                             startDate = LocalDate.of(year, month, days.first()),
                             endDate = LocalDate.of(year, month, days.last()),
-                            description = event.description,
+                            title = event.title,
                             color = event.color,
                             shape = event.shape
                         ))
@@ -176,7 +176,7 @@ class EventConverter {
                             id = event.id,
                             startDate = LocalDate.of(year, month, 1),
                             endDate = LocalDate.of(year, month, lastDayOfMonth),
-                            description = event.description,
+                            title = event.title,
                             color = event.color,
                             shape = event.shape
                         ))

@@ -6,10 +6,43 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.example.academically.uiAcademicAlly.DaysOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
+
+
+data class EventCategory(
+    val id: Int,
+    val name: String,
+    val color: Color
+) {
+    companion object {
+        val INSTITUTIONAL = EventCategory(1, "Institucional", Color(0xFF2196F3)) // Azul
+        val CAREER = EventCategory(2, "Carrera", Color(0xFF4CAF50)) // Verde
+        val PERSONAL = EventCategory(3, "Personal", Color(0xFFFF9800)) // Naranja
+    }
+}
+
+data class EventItem(
+    val id: Int,
+    val icon: ImageVector,
+    val text: String
+)
+
+data class EventNotification(
+    val id: Int,
+    val time: Long, // Tiempo en milisegundos antes del evento
+    val title: String,
+    val message: String,
+    val isEnabled: Boolean = true
+)
+
+
 
 sealed class EventShape {
     object Circle : EventShape()
@@ -31,10 +64,18 @@ sealed class EventShape {
 
 data class Event(
     val id: Int,
+    // Datos básicos
+    val title: String,
+    val shortDescription: String = "",
+    val longDescription: String = "",
+    val location: String = "",
     val color: Color,
-    val description: String,
     val startDate: LocalDate? = null,
     val endDate: LocalDate? = null,
+    val category: EventCategory = EventCategory.PERSONAL,
+        val imagePath: String = "",
+    val items: List<EventItem> = emptyList(),
+    val notification: EventNotification? = null,
     val mesID: Int? = null,
     val shape: EventShape = EventShape.RoundedFull
 ) {
@@ -170,17 +211,23 @@ data class Event(
          */
         fun singleDay(
             id: Int,
+            title: String,
             date: LocalDate,
-            description: String,
-            color: Color,
+            category: EventCategory = EventCategory.INSTITUTIONAL,
+            color: Color = category.color,
+            shortDescription: String = "",
+            location: String = "",
             shape: EventShape = EventShape.RoundedFull
         ): Event {
             return Event(
                 id = id,
+                title = title,
+                shortDescription = shortDescription,
+                location = location,
                 startDate = date,
                 endDate = date,
-                description = description,
                 color = color,
+                category = category,
                 shape = shape
             )
         }
@@ -190,20 +237,24 @@ data class Event(
          */
         fun multiDay(
             id: Int,
+            title: String,
             startDate: LocalDate,
             endDate: LocalDate,
-            description: String,
-            color: Color
+            category: EventCategory = EventCategory.INSTITUTIONAL,
+            color: Color = category.color,
+            shortDescription: String = "",
+            location: String = ""
         ): Event {
             return Event(
                 id = id,
+                title = title,
+                shortDescription = shortDescription,
+                location = location,
                 startDate = startDate,
                 endDate = endDate,
-                description = description,
-                color = color
+                color = color,
+                category = category
             )
         }
     }
 }
-
-class Items (val icon:Icon, val string: String)

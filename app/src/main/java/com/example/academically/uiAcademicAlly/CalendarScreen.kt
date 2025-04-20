@@ -6,6 +6,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,6 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.academically.R
 import com.example.academically.data.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -278,10 +280,27 @@ fun EventInformation(processedEvents: Map<Int, ProcessedEvent>) {
     // Filtramos eventos duplicados por ID
     val uniqueEvents = allEvents.distinctBy { it.id }
 
-    Column(Modifier.padding(8.dp)) {
+
+
+    // En tu composable principal:
+    var selectedEvent by remember { mutableStateOf<Event?>(null) }
+
+// Mostrar el calendario...
+
+// Si hay un evento seleccionado, mostrar la tarjeta
+    selectedEvent?.let { event ->
+        EventDetailCard(
+            event = event,
+            onDismiss = { selectedEvent = null },
+            onDelete = { /* Implementar eliminación */ },
+        )
+    }
+
+    Column(Modifier.padding(2.dp)) {
         Text(
             text = "Eventos",
-            style = MaterialTheme.typography.titleSmall,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
@@ -293,30 +312,84 @@ fun EventInformation(processedEvents: Map<Int, ProcessedEvent>) {
             )
         } else {
             for (event in uniqueEvents) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                ) {
-                    // Indicador de color
-                    Box(
-                        modifier = Modifier
-                            .size(16.dp)
-                            .background(event.color, CircleShape)
-                    )
+                EventButton(event = event, onClick = {selectedEvent = event})
+            }
+        }
+    }
+}
 
-                    // Descripción del evento
+/**
+ * Botón para mostrar un evento en la lista de eventos
+ */
+@Composable
+fun EventButton(
+    event: Event,
+    onClick: () -> Unit = {}
+) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 1.dp,
+            pressedElevation = 4.dp
+        ),
+        shape = RoundedCornerShape(6.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(2.dp)
+        ) {
+            // Indicador de color
+            Box(
+                modifier = Modifier
+                    .size(16.dp)
+                    .background(event.color, RoundedCornerShape(4.dp))
+            )
+
+            // Descripción del evento
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 12.dp)
+            ) {
+                // Título del evento (anteriormente era description)
+                Text(
+                    text = event.title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                // Si existe descripción corta, la mostramos
+                if (event.shortDescription.isNotEmpty()) {
                     Text(
-                        text = event.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(start = 8.dp)
+                        text = event.shortDescription,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // Si existe ubicación, la mostramos
+                if (event.location.isNotEmpty()) {
+                    Text(
+                        text = event.location,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
         }
     }
 }
+
+
 
 @SuppressLint("NewApi")
 @Preview(showSystemUi = true)
@@ -328,7 +401,7 @@ fun CalendarPreview() {
         Event(
             id = 1,
             color = Color.Blue,
-            description = "Suspension de clases",
+            title = "Suspension de clases",
             startDate = LocalDate.of(2025, 1, 1),
             endDate = LocalDate.of(2025, 1, 1),
             mesID = 1
@@ -336,7 +409,7 @@ fun CalendarPreview() {
         Event(
             id = 2,
             color = Color.Blue,
-            description = "Suspension de clases",
+            title = "Suspension de clases",
             startDate = LocalDate.of(2025, 2, 3),
             endDate = LocalDate.of(2025, 2, 3),
             mesID = 1
@@ -344,7 +417,7 @@ fun CalendarPreview() {
         Event(
             id = 3,
             color = Color.Blue,
-            description = "Suspension de clases",
+            title = "Suspension de clases",
             startDate = LocalDate.of(2025, 3, 17),
             endDate = LocalDate.of(2025, 3, 17),
             mesID = 1
@@ -352,7 +425,7 @@ fun CalendarPreview() {
         Event(
             id = 4,
             color = Color.Green,
-            description = "Periodo vacacional",
+            title = "Periodo vacacional",
             startDate = LocalDate.of(2025, 1, 1),
             endDate = LocalDate.of(2025, 1, 8),
             mesID = 1
@@ -360,7 +433,7 @@ fun CalendarPreview() {
         Event(
             id = 5,
             color = Color.Green,
-            description = "Periodo vacacional",
+            title = "Periodo vacacional",
             startDate = LocalDate.of(2025, 4, 14),
             endDate = LocalDate.of(2025, 4, 25),
             mesID = 1
@@ -368,7 +441,7 @@ fun CalendarPreview() {
         Event(
             id = 6,
             color = Color.Black,
-            description = "Inicio de clases",
+            title = "Inicio de clases",
             startDate = LocalDate.of(2025, 1, 28),
             endDate = LocalDate.of(2025, 1, 28),
             mesID = 5,
@@ -377,7 +450,7 @@ fun CalendarPreview() {
         Event(
             id = 7,
             color = Color.Magenta,
-            description = "Mi cumpleaños",
+            title = "Mi cumpleaños",
             startDate = LocalDate.of(2025, 2, 28),
             endDate = LocalDate.of(2025, 2, 28),
             mesID = 2,
@@ -387,21 +460,21 @@ fun CalendarPreview() {
         Event(
             id =8 ,
             color = Color.Blue,
-            description = "Suspension de clases",
+            title = "Suspension de clases",
             startDate = LocalDate.of(2025, 5, 1),
             endDate = LocalDate.of(2025, 5, 1),
             mesID = 1
         ),Event(
             id = 9,
             color = Color.Blue,
-            description = "Suspension de clases",
+            title = "Suspension de clases",
             startDate = LocalDate.of(2025, 5, 5),
             endDate = LocalDate.of(2025, 5, 5),
             mesID = 1
         ),Event(
             id = 10,
             color = Color.Blue,
-            description = "Suspension de clases",
+            title = "Suspension de clases",
             startDate = LocalDate.of(2025, 5, 15),
             endDate = LocalDate.of(2025, 5, 15),
             mesID = 1
@@ -409,7 +482,7 @@ fun CalendarPreview() {
         Event(
             id = 11,
             color = Color.Gray,
-            description = "Suspension de clases",
+            title = "Suspension de clases",
             startDate = LocalDate.of(2025, 5, 15),
             endDate = LocalDate.of(2025, 5, 15),
             mesID = 1
@@ -417,7 +490,7 @@ fun CalendarPreview() {
         Event(
             id = 12,
             color = Color.Yellow,
-            description = "Suspension de clases",
+            title = "Suspension de clases",
             startDate = LocalDate.of(2025, 5, 15),
             endDate = LocalDate.of(2025, 5, 15),
             mesID = 1
@@ -425,11 +498,34 @@ fun CalendarPreview() {
         Event(
             id = 13,
             color = Color.Gray,
-            description = "Fin de clases",
+            title = "Fin de clases",
             startDate = LocalDate.of(2025, 5, 30),
             endDate = LocalDate.of(2025, 5, 30),
             mesID = 1
         ),
+        Event(
+            id = 14,
+            title = "Convocatoria Servicio Social",
+            shortDescription = "Registro para servicio",
+            longDescription = "Estimado estudiante de TICs si le interesa realizar su servicio social durante el periodo Diciembre 2024 - Junio 2025 guardar esta información Coordinación Instruccional de tutorías Desarrollo Académico.",
+            location = "Edificio 6",
+            imagePath = R.drawable.seminario.toString(),
+            startDate = LocalDate.of(2025, 11, 28),
+            endDate = LocalDate.of(2025, 11, 29),
+            category = EventCategory.CAREER,
+            color = Color(0xFF00BCD4), // Cian
+            items = listOf(
+                EventItem(1, Icons.Default.Person, "Coordinación Instruccional de tutorías"),
+                EventItem(2, Icons.Default.Call, "123456789")
+            ),
+            notification = EventNotification(
+                id = 1,
+                time = 86400000, // 1 día
+                title = "Recordatorio",
+                message = "Convocatoria Servicio Social mañana",
+                isEnabled = true
+            )
+        )
     )
 
     // Crear proveedor de calendario
