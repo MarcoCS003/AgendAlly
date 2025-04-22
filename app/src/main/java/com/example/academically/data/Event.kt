@@ -6,15 +6,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import com.example.academically.uiAcademicAlly.DaysOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
-
 
 data class EventCategory(
     val id: Int,
@@ -41,8 +36,6 @@ data class EventNotification(
     val message: String,
     val isEnabled: Boolean = true
 )
-
-
 
 sealed class EventShape {
     object Circle : EventShape()
@@ -73,7 +66,7 @@ data class Event(
     val startDate: LocalDate? = null,
     val endDate: LocalDate? = null,
     val category: EventCategory = EventCategory.PERSONAL,
-        val imagePath: String = "",
+    val imagePath: String = "",
     val items: List<EventItem> = emptyList(),
     val notification: EventNotification? = null,
     val mesID: Int? = null,

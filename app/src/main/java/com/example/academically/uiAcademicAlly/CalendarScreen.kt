@@ -6,7 +6,6 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,7 +22,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -34,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.academically.R
 import com.example.academically.data.*
-import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 enum class DaysOfWeek {
@@ -46,12 +43,11 @@ fun CalendarAppScreen(
     mounts: List<MountAcademicAlly> = emptyList(),
     currentMonthIndex: Int = 0,
     processedEvents: Map<Int, Map<Int, ProcessedEvent>> = emptyMap(),
-    onAddEvent: (Int, String, Color) -> Unit = { _, _, _ -> }
+    onAddEventClick: () -> Unit
 ) {
     Box {
         // Estado para el scroll de LazyColumn
         val lazyListState = rememberLazyListState()
-        val coroutineScope = rememberCoroutineScope()
 
         // Scroll inicial al mes actual
         LaunchedEffect(currentMonthIndex) {
@@ -90,9 +86,7 @@ fun CalendarAppScreen(
         // Botón para añadir evento
         FloatingActionButton(
             onClick = {
-                // Placeholder para añadir evento
-                val visibleMonth = lazyListState.firstVisibleItemIndex + 1 // +1 para convertir a base-1
-                onAddEvent(1, "Nuevo evento", Color.Blue)
+                onAddEventClick()
             },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -558,7 +552,8 @@ fun CalendarPreview() {
         CalendarAppScreen(
             mounts = months,
             currentMonthIndex = currentMonthIndex,
-            processedEvents = allProcessedEvents
+            processedEvents = allProcessedEvents,
+            onAddEventClick = {}
         )
     }
 }
@@ -600,13 +595,9 @@ fun MultiEventDayView(
  * Extension function para dibujar un pastel de eventos en el Canvas
  */
 private fun DrawScope.drawPieChart(events: List<Event>, totalSlices: Int) {
-    val center = Offset(size.width / 2, size.height / 2)
-    val radius = size.width / 2
-
-    // Calculamos el ángulo de cada porción
+    
     val sweepAngle = 360f / totalSlices
 
-    // Dibujamos cada porción del pastel
     events.forEachIndexed { index, event ->
         val startAngle = index * sweepAngle+90
 

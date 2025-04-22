@@ -1,51 +1,81 @@
 package com.example.academically
 
-import android.annotation.SuppressLint
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.academically.data.Event
-import com.example.academically.data.EventProcessor
-import com.example.academically.data.EventShape
-import com.example.academically.data.ProcessedEvent
-import com.example.academically.data.SystemCalendarProvider
-import com.example.academically.ui.theme.AcademicAllyTheme
-import com.example.academically.uiAcademicAlly.CalendarAppScreen
-import com.example.academically.uiAcademicAlly.CalendarPreview
-import java.time.LocalDate
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import com.example.academically.uiAcademicAlly.NavigationHost
+import com.example.academically.uiAcademicAlly.NavigationItemContent
+import com.example.academically.utils.currentRoute
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            AcademicAllyTheme {
-                Box(modifier = Modifier.fillMaxSize()){
-                    CalendarPreview()
-                }
+            Surface(
+                modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
+            ) {
+                MainScreen()
             }
         }
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
+@Preview
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
+fun MainScreen() {
+    val navController = rememberNavController()
+    Scaffold(bottomBar = { NavegacionInferior(navController = navController) }) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+        ) {
+            NavigationHost(navController = navController)
+        }
+    }
 }
 
+@Composable
+fun NavegacionInferior(
+    navController: NavHostController
+) {
+    val menuItems = listOf(NavigationItemContent.Calendar,
+        NavigationItemContent.Schedule, NavigationItemContent.Institute, NavigationItemContent.Next
+    )
+
+    BottomAppBar {
+        NavigationBar {
+            menuItems .forEach { item ->
+
+                val selected = currentRoute(navController) == item.ruta
+                NavigationBarItem(selected = false, onClick = { navController.navigate(item.ruta) }, icon = {
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = item.text
+                    )
+                })
+            }
+        }
+    }
+}

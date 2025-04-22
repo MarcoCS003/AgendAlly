@@ -127,10 +127,10 @@ fun EventDetailCard(
 
                     // Botón de ocultar
                     IconButton(onClick = onDismiss) {
-                        Image(
-                            painterResource(id = R.drawable.baseline_remove_red_eye_24),
-                            contentDescription = "Ocultar",
-
+                        Icon(
+                            imageVector = Icons.Default.RemoveRedEye,
+                            contentDescription = "Ocultar Evento",
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -138,6 +138,7 @@ fun EventDetailCard(
         }
     }
 }
+
 
 /**
  * Encabezado de la tarjeta de evento con color, categoría y título
