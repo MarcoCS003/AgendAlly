@@ -15,7 +15,7 @@ sealed class NavigationItemContent(
 ){
     object Calendar: NavigationItemContent(icon = Icons.Default.CalendarMonth,"Calendar", "Calendar" )
     object Schedule: NavigationItemContent(icon = Icons.Default.AccessTime,"Schedule", "Schedule" )
-    object Institute: NavigationItemContent(icon = Icons.Default.AccountBalance,"Institute", "Schedule" )
+    object Institute: NavigationItemContent(icon = Icons.Default.AccountBalance,"Institute", "Institute" )
     object Next: NavigationItemContent(icon = Icons.Default.Settings,"Next", "Schedule" )
 
     // Navegacion fuera de la Barra de navegacion

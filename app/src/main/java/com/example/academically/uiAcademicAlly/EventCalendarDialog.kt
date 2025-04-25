@@ -231,7 +231,7 @@ fun NotificationButton(notification: EventNotification) {
  * Formatea las fechas del evento para mostrarlas en la tarjeta
  */
 @SuppressLint("NewApi")
-private fun formatEventDate(startDate: LocalDate?, endDate: LocalDate?): String {
+fun formatEventDate(startDate: LocalDate?, endDate: LocalDate?): String {
     if (startDate == null) return ""
 
     val formatter = DateTimeFormatter.ofPattern("d 'de' MMMM")
@@ -306,6 +306,7 @@ fun EventDetailCardPersonalPreview() {
     }
 }
 
+
 @SuppressLint("NewApi")
 @Preview(showBackground = true, widthDp = 400, heightDp = 600)
 @Composable
@@ -327,3 +328,4 @@ fun EventDetailCardInstitutionalPreview() {
         EventDetailCard(event = event3)
     }
 }
+

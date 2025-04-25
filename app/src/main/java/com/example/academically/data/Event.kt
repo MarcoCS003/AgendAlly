@@ -1,7 +1,6 @@
 package com.example.academically.data
 
 import android.annotation.SuppressLint
-import android.graphics.drawable.Icon
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.foundation.shape.CircleShape

@@ -6,20 +6,27 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.academically.R
+import com.example.academically.data.BlogDataExample
+import com.example.academically.data.Career
 import com.example.academically.data.Event
 import com.example.academically.data.EventCategory
 import com.example.academically.data.EventItem
 import com.example.academically.data.EventNotification
 import com.example.academically.data.EventProcessor
 import com.example.academically.data.EventShape
+import com.example.academically.data.Institute
 import com.example.academically.data.ProcessedEvent
+import com.example.academically.data.SampleInstituteData
 import com.example.academically.data.SystemCalendarProvider
+import java.lang.reflect.Modifier
 import java.time.LocalDate
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -200,6 +207,36 @@ fun NavigationHost(navController: NavHostController){
                     navController.navigateUp()
                 }
             )
+        }
+
+        composable(NavigationItemContent.Institute.ruta){
+            val availableInstitutes = SampleInstituteData.getSampleInstitutes()
+
+            // Lista mutable para institutos y carreras seleccionados
+            val selectedInstitutesWithCareers = remember {
+                mutableStateListOf<Pair<Institute, Career>>()
+            }
+
+
+            InstituteAndCareerSelectionFlow(
+                institutes = availableInstitutes,
+                onInstituteAndCareerSelected = { institute, career ->
+                    // Agregar la pareja de instituto y carrera a la lista de seleccionados
+                    val pair = institute to career
+                    if (!selectedInstitutesWithCareers.contains(pair)) {
+                        selectedInstitutesWithCareers.add(pair)
+                    }
+
+                    // Aquí se podría implementar la navegación a la siguiente pantalla
+                    // o cualquier otra acción después de la selección
+                }
+            )
+
+        }
+
+        composable (NavigationItemContent.Schedule.ruta){
+            EventBlogScreen(
+                events = BlogDataExample.getSampleBlog())
         }
     }
 }
