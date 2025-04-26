@@ -25,6 +25,7 @@ import com.example.academically.data.EventShape
 import com.example.academically.data.Institute
 import com.example.academically.data.ProcessedEvent
 import com.example.academically.data.SampleInstituteData
+import com.example.academically.data.SampleScheduleData
 import com.example.academically.data.SystemCalendarProvider
 import java.lang.reflect.Modifier
 import java.time.LocalDate
@@ -209,7 +210,7 @@ fun NavigationHost(navController: NavHostController){
             )
         }
 
-        composable(NavigationItemContent.Institute.ruta){
+        composable(NavigationItemContent.Next.ruta){
             val availableInstitutes = SampleInstituteData.getSampleInstitutes()
 
             // Lista mutable para institutos y carreras seleccionados
@@ -234,9 +235,15 @@ fun NavigationHost(navController: NavHostController){
 
         }
 
-        composable (NavigationItemContent.Schedule.ruta){
+        composable (NavigationItemContent.Institute.ruta){
             EventBlogScreen(
                 events = BlogDataExample.getSampleBlog())
+        }
+
+        composable(NavigationItemContent.Schedule.ruta) {
+            ScheduleScreen(
+                schedules = SampleScheduleData.getSampleSchedules()
+            )
         }
     }
 }

@@ -56,7 +56,7 @@ object SampleScheduleData {
                 teacher = "BEATRIZ PEREZ ROJAS",
                 times = listOf(
                     ScheduleTime(DaysOfWeek.MARTES, LocalTime.of(11, 0), LocalTime.of(13, 0)),
-                    ScheduleTime(DaysOfWeek.JUEVES, LocalTime.of(11, 30), LocalTime.of(13, 0)),
+                    ScheduleTime(DaysOfWeek.JUEVES, LocalTime.of(11, 0), LocalTime.of(13, 0)),
                     ScheduleTime(DaysOfWeek.VIERNES, LocalTime.of(12, 0), LocalTime.of(13, 0))
                 )
             ),
@@ -80,7 +80,7 @@ object SampleScheduleData {
                 teacher = "ANDRÉS MUÑOZ FLORES",
                 times = listOf(
                     ScheduleTime(DaysOfWeek.MARTES, LocalTime.of(15, 0), LocalTime.of(17, 0)),
-                    ScheduleTime(DaysOfWeek.JUEVES, LocalTime.of(16, 0), LocalTime.of(17, 0)),
+                    ScheduleTime(DaysOfWeek.JUEVES, LocalTime.of(15, 0), LocalTime.of(17, 0)),
                     ScheduleTime(DaysOfWeek.VIERNES, LocalTime.of(16, 0), LocalTime.of(17, 0))
                 )
             )
