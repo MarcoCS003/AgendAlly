@@ -29,8 +29,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarViewWeek
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -38,7 +40,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,15 +50,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.academically.ViewModel.ScheduleViewModel
+import com.example.academically.ViewModel.ScheduleViewModelFactory
 import com.example.academically.data.SampleScheduleData
 import com.example.academically.data.Schedule
 import com.example.academically.data.ScheduleTime
+import com.example.academically.data.database.AcademicAllyDatabase
+import com.example.academically.data.repositorty.ScheduleRepository
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.TextStyle
@@ -66,13 +76,77 @@ enum class ViewMode {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
+fun ScheduleScreenWithViewModel(
+    viewModel: ScheduleViewModel = viewModel(
+        factory = ScheduleViewModelFactory(
+            ScheduleRepository(
+                AcademicAllyDatabase.getDatabase(LocalContext.current).scheduleDao()
+            )
+        )
+    ),
+    onAddActivity: () -> Unit
+) {
+    val schedules by viewModel.schedules.collectAsState()
+    val currentDate by viewModel.currentDate.collectAsState()
+    val viewMode by viewModel.viewMode.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
+
+    // Mostrar errores si existen
+    error?.let { errorMessage ->
+        AlertDialog(
+            onDismissRequest = { viewModel.clearError() },
+            title = { Text("Error") },
+            text = { Text(errorMessage) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.clearError() }) {
+                    Text("Aceptar")
+                }
+            }
+        )
+    }
+
+    if (isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+    } else {
+        ScheduleScreen(
+            schedules = schedules,
+            currentDate = currentDate,
+            viewMode = viewMode,
+            onAddActivity = onAddActivity,
+            onViewModeChange = { viewModel.changeViewMode(it) },
+            onNextDay = { viewModel.navigateToNextDay() },
+            onPreviousDay = { viewModel.navigateToPreviousDay() },
+            onNextWeek = { viewModel.navigateToNextWeek() },
+            onPreviousWeek = { viewModel.navigateToPreviousWeek() }
+        )
+    }
+}
+
+
+
+
+
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
 fun ScheduleScreen(
     schedules: List<Schedule>,
+    currentDate: LocalDate,
+    viewMode: ViewMode,
     modifier: Modifier = Modifier,
-    onAddActivity: () -> Unit = {}
+    onAddActivity: () -> Unit,
+    onViewModeChange: (ViewMode) -> Unit,
+    onNextDay: () -> Unit,
+    onPreviousDay: () -> Unit,
+    onNextWeek: () -> Unit,
+    onPreviousWeek: () -> Unit
 ) {
-    var currentDate by remember { mutableStateOf(LocalDate.now()) }
-    var viewMode by remember { mutableStateOf(ViewMode.DAILY) }
     val (startHour, endHour) = remember(schedules) {
         calculateHourRange(schedules)
     }
@@ -81,7 +155,10 @@ fun ScheduleScreen(
         modifier = modifier,
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onAddActivity
+                onClick = onAddActivity,
+                modifier = Modifier
+                    .padding(16.dp)
+                    .size(65.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Añadir actividad")
             }
@@ -93,22 +170,22 @@ fun ScheduleScreen(
                 .padding(paddingValues)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Header con navegación adaptable según el modo de vista
+            // Header con navegación
             when (viewMode) {
                 ViewMode.DAILY -> {
                     DayNavigationHeader(
                         currentDate = currentDate,
-                        onPreviousDay = { currentDate = currentDate.minusDays(1) },
-                        onNextDay = { currentDate = currentDate.plusDays(1) },
-                        onViewModeChange = { viewMode = ViewMode.WEEKLY }
+                        onPreviousDay = onPreviousDay,
+                        onNextDay = onNextDay,
+                        onViewModeChange = { onViewModeChange(ViewMode.WEEKLY) }
                     )
                 }
                 ViewMode.WEEKLY -> {
                     WeekNavigationHeader(
                         currentDate = currentDate,
-                        onPreviousWeek = { currentDate = currentDate.minusWeeks(1) },
-                        onNextWeek = { currentDate = currentDate.plusWeeks(1) },
-                        onViewModeChange = { viewMode = ViewMode.DAILY }
+                        onPreviousWeek = onPreviousWeek,
+                        onNextWeek = onNextWeek,
+                        onViewModeChange = { onViewModeChange(ViewMode.DAILY) }
                     )
                 }
             }
@@ -150,6 +227,7 @@ fun ScheduleScreen(
         }
     }
 }
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 private fun calculateHourRange(schedules: List<Schedule>): Pair<Int, Int> {
@@ -431,7 +509,16 @@ private fun convertDayOfWeekToDaysOfWeek(dayOfWeek: DayOfWeek): DaysOfWeek {
 fun ScheduleScreenPreview() {
     MaterialTheme {
         ScheduleScreen(
-            schedules = SampleScheduleData.getSampleSchedules()
+            schedules = SampleScheduleData.getSampleSchedules(),
+            onAddActivity = {},
+            currentDate = TODO(),
+            viewMode = TODO(),
+            modifier = TODO(),
+            onViewModeChange = TODO(),
+            onNextDay = TODO(),
+            onPreviousDay = TODO(),
+            onNextWeek = TODO(),
+            onPreviousWeek = TODO()
         )
     }
 }

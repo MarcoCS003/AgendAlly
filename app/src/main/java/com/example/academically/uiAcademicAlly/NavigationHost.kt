@@ -10,10 +10,13 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.academically.R
+import com.example.academically.ViewModel.ScheduleViewModel
+import com.example.academically.ViewModel.ScheduleViewModelFactory
 import com.example.academically.data.BlogDataExample
 import com.example.academically.data.Career
 import com.example.academically.data.Event
@@ -27,13 +30,23 @@ import com.example.academically.data.ProcessedEvent
 import com.example.academically.data.SampleInstituteData
 import com.example.academically.data.SampleScheduleData
 import com.example.academically.data.SystemCalendarProvider
-import java.lang.reflect.Modifier
+import com.example.academically.data.database.AcademicAllyDatabase
+import com.example.academically.data.repositorty.ScheduleRepository
 import java.time.LocalDate
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NavigationHost(navController: NavHostController){
-    NavHost(navController = navController, startDestination = NavigationItemContent.Calendar.ruta ,){
+
+    val context = LocalContext.current
+    val database = AcademicAllyDatabase.getDatabase(context)
+    val repository = ScheduleRepository(database.scheduleDao())
+    val scheduleViewModel: ScheduleViewModel = viewModel(
+        factory = ScheduleViewModelFactory(repository)
+    )
+
+
+    NavHost(navController = navController, startDestination = NavigationItemContent.Calendar.ruta){
         composable(NavigationItemContent.Calendar.ruta){
             val events = listOf(
                 // Eventos originales convertidos al nuevo formato
@@ -203,8 +216,6 @@ fun NavigationHost(navController: NavHostController){
                     navController.navigateUp()
                 },
                 onAddEvent = { title, date, location, color, description ->
-                    // Aquí implementarás la lógica para añadir el evento
-                    // Por ahora solo navegamos de vuelta al calendario
                     navController.navigateUp()
                 }
             )
@@ -241,8 +252,16 @@ fun NavigationHost(navController: NavHostController){
         }
 
         composable(NavigationItemContent.Schedule.ruta) {
-            ScheduleScreen(
-                schedules = SampleScheduleData.getSampleSchedules()
+            ScheduleScreenWithViewModel(
+                viewModel = scheduleViewModel,
+                onAddActivity = { navController.navigate(NavigationItemContent.AddEventSchedule.ruta) }
+            )
+        }
+
+        composable(NavigationItemContent.AddEventSchedule.ruta) {
+            AddScheduleActivityScreenWithViewModel(
+                viewModel = scheduleViewModel,
+                onNavigateBack = { navController.navigateUp() }
             )
         }
     }

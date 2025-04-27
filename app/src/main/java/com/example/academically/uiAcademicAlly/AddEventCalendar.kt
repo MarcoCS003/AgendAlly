@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.academically.data.ScheduleColors
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -62,7 +66,7 @@ fun AddEventScreen(
         ) {
             IconButton(onClick = onBack) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Volver"
                 )
             }
@@ -398,7 +402,7 @@ fun SimpleCalendarView(
                 enabled = !isFirstMonth || year > 2020 // Permitir retroceder si no es enero o si año > 2020
             ) {
                 Icon(
-                    Icons.Default.KeyboardArrowLeft,
+                    Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                     "Mes anterior",
                     tint = if (!isFirstMonth || year > 2020)
                         LocalContentColor.current
@@ -409,7 +413,8 @@ fun SimpleCalendarView(
 
             // Nombre del mes y año
             Text(
-                text = "${month.getDisplayName(TextStyle.FULL, Locale("es", "ES")).capitalize(Locale.getDefault())} $year",
+                text = "${month.getDisplayName(TextStyle.FULL, Locale("es", "ES"))
+                    .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }} $year",
                 style = MaterialTheme.typography.titleMedium
             )
 
@@ -428,7 +433,7 @@ fun SimpleCalendarView(
                 enabled = !isLastMonth || year < 2030 // Permitir avanzar si no es diciembre o si año < 2030
             ) {
                 Icon(
-                    Icons.Default.KeyboardArrowRight,
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     "Mes siguiente",
                     tint = if (!isLastMonth || year < 2030)
                         LocalContentColor.current
@@ -538,18 +543,6 @@ fun ColorPickerDialog(
     onColorSelected: (Color) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val colors = listOf(
-        Color(0xFF2196F3), // Azul
-        Color(0xFF4CAF50), // Verde
-        Color(0xFFF44336), // Rojo
-        Color(0xFFFF9800), // Naranja
-        Color(0xFF9C27B0), // Púrpura
-        Color(0xFF00BCD4), // Cian
-        Color(0xFFFFEB3B), // Amarillo
-        Color(0xFF795548), // Marrón
-        Color(0xFF607D8B)  // Gris azulado
-    )
-
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
@@ -569,24 +562,19 @@ fun ColorPickerDialog(
 
                 // Grid de colores
                 Column {
-                    for (i in 0 until 3) {
+                    ScheduleColors.colors.chunked(4).forEach { rowColors ->
                         Row(
                             horizontalArrangement = Arrangement.SpaceEvenly,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            for (j in 0 until 3) {
-                                val index = i * 3 + j
-                                if (index < colors.size) {
-                                    val color = colors[index]
-                                    ColorItem(
-                                        color = color,
-                                        isSelected = selectedColor == color,
-                                        onClick = { onColorSelected(color) }
-                                    )
-                                }
+                            rowColors.forEach { color ->
+                                ColorItem(
+                                    color = color,
+                                    isSelected = selectedColor == color,
+                                    onClick = { onColorSelected(color) }
+                                )
                             }
                         }
-
                         Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
@@ -607,9 +595,6 @@ fun ColorPickerDialog(
     }
 }
 
-/**
- * Item de color para el selector
- */
 @Composable
 fun ColorItem(
     color: Color,
@@ -617,26 +602,27 @@ fun ColorItem(
     onClick: () -> Unit
 ) {
     Box(
-        contentAlignment = Alignment.Center,
         modifier = Modifier
             .size(48.dp)
             .padding(4.dp)
+            .clip(CircleShape)
+            .background(color)
+            .clickable(onClick = onClick)
+            .then(
+                if (isSelected) {
+                    Modifier.border(2.dp, Color.Black, CircleShape)
+                } else {
+                    Modifier
+                }
+            ),
+        contentAlignment = Alignment.Center
     ) {
-        // Círculo de color
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(color)
-                .clickable(onClick = onClick)
-        )
-
-        // Indicador de selección
         if (isSelected) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .border(BorderStroke(2.dp, MaterialTheme.colorScheme.primary), CircleShape)
+            Icon(
+                Icons.Default.Check,
+                contentDescription = "Seleccionado",
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
             )
         }
     }
