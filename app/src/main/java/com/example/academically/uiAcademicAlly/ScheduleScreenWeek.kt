@@ -2,6 +2,8 @@ package com.example.academically.uiAcademicAlly
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,10 +19,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarViewDay
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -28,7 +34,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -50,8 +61,6 @@ import java.util.Locale
 @Composable
 fun WeekNavigationHeader(
     currentDate: LocalDate,
-    onPreviousWeek: () -> Unit,
-    onNextWeek: () -> Unit,
     onViewModeChange: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -90,7 +99,9 @@ fun WeekNavigationHeader(
         IconButton(onClick = onViewModeChange) {
             Icon(
                 Icons.Default.CalendarViewDay,
-                modifier = Modifier.size(38.dp).padding(horizontal = 5.dp),
+                modifier = Modifier
+                    .size(38.dp)
+                    .padding(horizontal = 5.dp),
                 contentDescription = "Vista diaria"
             )
         }
@@ -101,10 +112,11 @@ fun WeekNavigationHeader(
 @Composable
 fun WeeklyScheduleView(
     schedules: List<Schedule>,
-    currentDate: LocalDate,
     startHour: Int,
     endHour: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onEdit: (Schedule) -> Unit,
+    onDelete: (Schedule) -> Unit
 ) {
     val hourHeight = 70
     val columnWidth = 120
@@ -112,7 +124,6 @@ fun WeeklyScheduleView(
     val horizontalScrollState = rememberScrollState()
 
     // Obtener el lunes de la semana actual
-    val weekStart = currentDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
     val weekDays = listOf(
         DaysOfWeek.LUNES,
         DaysOfWeek.MARTES,
@@ -213,7 +224,9 @@ fun WeeklyScheduleView(
                                         time = time,
                                         hourHeight = hourHeight,
                                         columnWidth = columnWidth,
-                                        baseHour = startHour
+                                        baseHour = startHour,
+                                        onEdit = onEdit,
+                                        onDelete = onDelete
                                     )
                                 }
                             }
@@ -262,7 +275,9 @@ fun PositionedWeeklyScheduleCard(
     hourHeight: Int,
     columnWidth: Int,
     baseHour: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onEdit: (Schedule) -> Unit,
+    onDelete: (Schedule) -> Unit
 ) {
     val minutesPerPixel = hourHeight / 60f
 
@@ -282,7 +297,9 @@ fun PositionedWeeklyScheduleCard(
             .padding(horizontal = 2.dp)
             .offset(y = topOffset)
             .height(cardHeight)
-            .width(120.dp)
+            .width(120.dp),
+        onEdit = onEdit,
+        onDelete = onDelete
     )
 }
 
@@ -291,52 +308,123 @@ fun PositionedWeeklyScheduleCard(
 fun WeeklyScheduleCard(
     schedule: Schedule,
     time: ScheduleTime,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onEdit: (Schedule) -> Unit,
+    onDelete: (Schedule) -> Unit
 ) {
+    var showActions by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
     Card(
-        modifier = modifier,
+        modifier = modifier
+            .clickable { showActions = !showActions },
         colors = CardDefaults.cardColors(
             containerColor = schedule.color.copy(alpha = 0.9f)
         ),
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp)
-        ) {
-            Text(
-                text = schedule.name,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                color = Color.Black
-            )
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp)
+            ) {
+                Text(
+                    text = schedule.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    color = Color.Black
+                )
 
-            Spacer(modifier = Modifier.height(2.dp))
-
-            Text(
-                text = schedule.place,
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 10.sp,
-                color = Color.Black
-            )
-
-            if (time.hourEnd.hour - time.hourStart.hour > 1) {
                 Spacer(modifier = Modifier.height(2.dp))
 
                 Text(
-                    text = schedule.teacher,
+                    text = schedule.place,
                     style = MaterialTheme.typography.bodySmall,
                     fontSize = 10.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    color = Color.Black.copy(alpha = 0.8f)
+                    color = Color.Black
                 )
+
+                if (time.hourEnd.hour - time.hourStart.hour > 1) {
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = schedule.teacher,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontSize = 10.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = Color.Black.copy(alpha = 0.8f)
+                    )
+                }
+            }
+
+            // Mostrar botones de acción cuando se hace clic
+            if (showActions) {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(4.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    IconButton(
+                        onClick = { onEdit(schedule) },
+                        modifier = Modifier
+                            .size(20.dp)
+                            .background(Color.White.copy(alpha = 0.5f), CircleShape)
+                    ) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Editar",
+                            tint = Color.Black,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                    Spacer(modifier =Modifier.size(4.dp))
+                    IconButton(
+                        onClick = { showDeleteDialog = true },
+                        modifier = Modifier
+                            .size(20.dp)
+                            .background(Color.White.copy(alpha = 0.5f), CircleShape)
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Eliminar",
+                            tint = Color.Black,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                }
             }
         }
+    }
+
+    // Diálogo de confirmación de eliminación
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Eliminar actividad") },
+            text = { Text("¿Estás seguro de que deseas eliminar esta actividad?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDelete(schedule)
+                        showDeleteDialog = false
+                    }
+                ) {
+                    Text("Eliminar", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 }

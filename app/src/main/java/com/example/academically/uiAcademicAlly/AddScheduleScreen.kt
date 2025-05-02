@@ -31,15 +31,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.academically.ViewModel.ScheduleViewModel
 import com.example.academically.ViewModel.ScheduleViewModelFactory
-import com.example.academically.data.ScheduleColors
 import com.example.academically.data.ScheduleTime
 import com.example.academically.data.database.AcademicAllyDatabase
 import com.example.academically.data.repositorty.ScheduleRepository
+import com.example.academically.ui.theme.ScheduleColorsProvider
 import java.time.LocalTime
 import java.util.Locale
 
@@ -57,9 +58,12 @@ fun AddScheduleActivityScreenWithViewModel(
     ),
     onNavigateBack: () -> Unit
 ) {
+
+    val availableColors = ScheduleColorsProvider.getColors()
+
     var title by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
-    var selectedColor by remember { mutableStateOf(ScheduleColors.colors[0]) }
+    var selectedColor by remember { mutableStateOf(availableColors[0]) }
     var teacherName by remember { mutableStateOf("") }
     var customizePerDay by remember { mutableStateOf(false) }
     var startTime by remember { mutableStateOf(LocalTime.of(9, 0)) }

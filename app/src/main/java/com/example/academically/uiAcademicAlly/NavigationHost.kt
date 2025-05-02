@@ -28,7 +28,6 @@ import com.example.academically.data.EventShape
 import com.example.academically.data.Institute
 import com.example.academically.data.ProcessedEvent
 import com.example.academically.data.SampleInstituteData
-import com.example.academically.data.SampleScheduleData
 import com.example.academically.data.SystemCalendarProvider
 import com.example.academically.data.database.AcademicAllyDatabase
 import com.example.academically.data.repositorty.ScheduleRepository
@@ -52,7 +51,7 @@ fun NavigationHost(navController: NavHostController){
                 // Eventos originales convertidos al nuevo formato
                 Event(
                     id = 1,
-                    color = Color.Blue,
+                    color = Color(0xFF80DEEA),
                     title = "Suspension de clases",
                     startDate = LocalDate.of(2025, 1, 1),
                     endDate = LocalDate.of(2025, 1, 1),
@@ -60,7 +59,7 @@ fun NavigationHost(navController: NavHostController){
                 ),
                 Event(
                     id = 2,
-                    color = Color.Blue,
+                    color = Color(0xFFFFF59D),
                     title = "Suspension de clases",
                     startDate = LocalDate.of(2025, 2, 3),
                     endDate = LocalDate.of(2025, 2, 3),
@@ -68,7 +67,7 @@ fun NavigationHost(navController: NavHostController){
                 ),
                 Event(
                     id = 3,
-                    color = Color.Blue,
+                    color = Color(0xFFFFAB91),
                     title = "Suspension de clases",
                     startDate = LocalDate.of(2025, 3, 17),
                     endDate = LocalDate.of(2025, 3, 17),
@@ -76,7 +75,7 @@ fun NavigationHost(navController: NavHostController){
                 ),
                 Event(
                     id = 4,
-                    color = Color.Green,
+                    color = Color(0xFFC5E1A5),
                     title = "Periodo vacacional",
                     startDate = LocalDate.of(2025, 1, 1),
                     endDate = LocalDate.of(2025, 1, 8),
@@ -84,7 +83,7 @@ fun NavigationHost(navController: NavHostController){
                 ),
                 Event(
                     id = 5,
-                    color = Color.Green,
+                    color = Color(0xFFB39DDB),
                     title = "Periodo vacacional",
                     startDate = LocalDate.of(2025, 4, 14),
                     endDate = LocalDate.of(2025, 4, 25),
@@ -92,7 +91,7 @@ fun NavigationHost(navController: NavHostController){
                 ),
                 Event(
                     id = 6,
-                    color = Color.Black,
+                    color = Color(0xFFFFCC80),
                     title = "Inicio de clases",
                     startDate = LocalDate.of(2025, 1, 28),
                     endDate = LocalDate.of(2025, 1, 28),
@@ -101,7 +100,7 @@ fun NavigationHost(navController: NavHostController){
                 ),
                 Event(
                     id = 7,
-                    color = Color.Magenta,
+                    color = Color(0xFFCE93D8),
                     title = "Mi cumpleaños",
                     startDate = LocalDate.of(2025, 2, 28),
                     endDate = LocalDate.of(2025, 2, 28),
@@ -111,21 +110,21 @@ fun NavigationHost(navController: NavHostController){
                 // Evento que abarca varios meses
                 Event(
                     id =8 ,
-                    color = Color.Blue,
+                    color = Color(0xFF90CAF9),
                     title = "Suspension de clases",
                     startDate = LocalDate.of(2025, 5, 1),
                     endDate = LocalDate.of(2025, 5, 1),
                     mesID = 1
-                ), Event(
+                ),Event(
                     id = 9,
-                    color = Color.Blue,
+                    color = Color(0xFFF48FB1),
                     title = "Suspension de clases",
                     startDate = LocalDate.of(2025, 5, 5),
                     endDate = LocalDate.of(2025, 5, 5),
                     mesID = 1
-                ), Event(
+                ),Event(
                     id = 10,
-                    color = Color.Blue,
+                    color = Color(0xFF81D4FA),
                     title = "Suspension de clases",
                     startDate = LocalDate.of(2025, 5, 15),
                     endDate = LocalDate.of(2025, 5, 15),
@@ -133,7 +132,7 @@ fun NavigationHost(navController: NavHostController){
                 ),
                 Event(
                     id = 11,
-                    color = Color.Gray,
+                    color = Color(0xFFFFD54F),
                     title = "Suspension de clases",
                     startDate = LocalDate.of(2025, 5, 15),
                     endDate = LocalDate.of(2025, 5, 15),
@@ -141,7 +140,7 @@ fun NavigationHost(navController: NavHostController){
                 ),
                 Event(
                     id = 12,
-                    color = Color.Yellow,
+                    color = Color(0xFF4DB6AC),
                     title = "Suspension de clases",
                     startDate = LocalDate.of(2025, 5, 15),
                     endDate = LocalDate.of(2025, 5, 15),
@@ -149,7 +148,7 @@ fun NavigationHost(navController: NavHostController){
                 ),
                 Event(
                     id = 13,
-                    color = Color.Gray,
+                    color = Color(0xFF9575CD),
                     title = "Fin de clases",
                     startDate = LocalDate.of(2025, 5, 30),
                     endDate = LocalDate.of(2025, 5, 30),
@@ -165,7 +164,7 @@ fun NavigationHost(navController: NavHostController){
                     startDate = LocalDate.of(2025, 11, 28),
                     endDate = LocalDate.of(2025, 11, 29),
                     category = EventCategory.CAREER,
-                    color = Color(0xFF00BCD4), // Cian
+                    color = Color(0xFFE57373), // Cian
                     items = listOf(
                         EventItem(1, Icons.Default.Person, "Coordinación Instruccional de tutorías"),
                         EventItem(2, Icons.Default.Call, "123456789")
@@ -254,9 +253,30 @@ fun NavigationHost(navController: NavHostController){
         composable(NavigationItemContent.Schedule.ruta) {
             ScheduleScreenWithViewModel(
                 viewModel = scheduleViewModel,
-                onAddActivity = { navController.navigate(NavigationItemContent.AddEventSchedule.ruta) }
+                onAddActivity = {
+                    navController.navigate(NavigationItemContent.AddEventSchedule.ruta)
+                },
+                onEditActivity = { schedule ->
+                    // Solo pasar el ID, no el objeto completo
+                    navController.navigate("${NavigationItemContent.EditEventSchedule.ruta}/${schedule.id}")
+                }
             )
         }
+
+
+        composable("${NavigationItemContent.EditEventSchedule.ruta}/{scheduleId}") { backStackEntry ->
+            val scheduleId = backStackEntry.arguments?.getString("scheduleId")?.toIntOrNull()
+            if (scheduleId != null) {
+                EditScheduleActivityScreen(
+                    scheduleId = scheduleId,
+                    viewModel = scheduleViewModel,
+                    onNavigateBack = { navController.navigateUp() }
+                )
+            } else {
+                navController.navigateUp()
+            }
+        }
+
 
         composable(NavigationItemContent.AddEventSchedule.ruta) {
             AddScheduleActivityScreenWithViewModel(

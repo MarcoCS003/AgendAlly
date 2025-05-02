@@ -6,6 +6,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,6 +26,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -108,7 +111,14 @@ fun CalendarCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(15.dp)
+            .padding(15.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSystemInDarkTheme())
+                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
+            else
+                Color.White
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Column(
             horizontalAlignment = Alignment.Start,
@@ -255,7 +265,7 @@ fun DayWithEvent(
         ) {
             Text(
                 text = dayNumber,
-                style = TextStyle(color = Color.White)
+                fontWeight = FontWeight.Bold,
             )
         }
     }
@@ -394,7 +404,7 @@ fun CalendarPreview() {
         // Eventos originales convertidos al nuevo formato
         Event(
             id = 1,
-            color = Color.Blue,
+            color = Color(0xFF80DEEA),
             title = "Suspension de clases",
             startDate = LocalDate.of(2025, 1, 1),
             endDate = LocalDate.of(2025, 1, 1),
@@ -402,7 +412,7 @@ fun CalendarPreview() {
         ),
         Event(
             id = 2,
-            color = Color.Blue,
+            color = Color(0xFFFFF59D),
             title = "Suspension de clases",
             startDate = LocalDate.of(2025, 2, 3),
             endDate = LocalDate.of(2025, 2, 3),
@@ -410,7 +420,7 @@ fun CalendarPreview() {
         ),
         Event(
             id = 3,
-            color = Color.Blue,
+            color = Color(0xFFFFAB91),
             title = "Suspension de clases",
             startDate = LocalDate.of(2025, 3, 17),
             endDate = LocalDate.of(2025, 3, 17),
@@ -418,7 +428,7 @@ fun CalendarPreview() {
         ),
         Event(
             id = 4,
-            color = Color.Green,
+            color = Color(0xFFC5E1A5),
             title = "Periodo vacacional",
             startDate = LocalDate.of(2025, 1, 1),
             endDate = LocalDate.of(2025, 1, 8),
@@ -426,7 +436,7 @@ fun CalendarPreview() {
         ),
         Event(
             id = 5,
-            color = Color.Green,
+            color = Color(0xFFB39DDB),
             title = "Periodo vacacional",
             startDate = LocalDate.of(2025, 4, 14),
             endDate = LocalDate.of(2025, 4, 25),
@@ -434,7 +444,7 @@ fun CalendarPreview() {
         ),
         Event(
             id = 6,
-            color = Color.Black,
+            color = Color(0xFFFFCC80),
             title = "Inicio de clases",
             startDate = LocalDate.of(2025, 1, 28),
             endDate = LocalDate.of(2025, 1, 28),
@@ -443,7 +453,7 @@ fun CalendarPreview() {
         ),
         Event(
             id = 7,
-            color = Color.Magenta,
+            color = Color(0xFFCE93D8),
             title = "Mi cumpleaños",
             startDate = LocalDate.of(2025, 2, 28),
             endDate = LocalDate.of(2025, 2, 28),
@@ -453,21 +463,21 @@ fun CalendarPreview() {
         // Evento que abarca varios meses
         Event(
             id =8 ,
-            color = Color.Blue,
+            color = Color(0xFF90CAF9),
             title = "Suspension de clases",
             startDate = LocalDate.of(2025, 5, 1),
             endDate = LocalDate.of(2025, 5, 1),
             mesID = 1
         ),Event(
             id = 9,
-            color = Color.Blue,
+            color = Color(0xFFF48FB1),
             title = "Suspension de clases",
             startDate = LocalDate.of(2025, 5, 5),
             endDate = LocalDate.of(2025, 5, 5),
             mesID = 1
         ),Event(
             id = 10,
-            color = Color.Blue,
+            color = Color(0xFF81D4FA),
             title = "Suspension de clases",
             startDate = LocalDate.of(2025, 5, 15),
             endDate = LocalDate.of(2025, 5, 15),
@@ -475,7 +485,7 @@ fun CalendarPreview() {
         ),
         Event(
             id = 11,
-            color = Color.Gray,
+            color = Color(0xFFFFD54F),
             title = "Suspension de clases",
             startDate = LocalDate.of(2025, 5, 15),
             endDate = LocalDate.of(2025, 5, 15),
@@ -483,7 +493,7 @@ fun CalendarPreview() {
         ),
         Event(
             id = 12,
-            color = Color.Yellow,
+            color = Color(0xFF4DB6AC),
             title = "Suspension de clases",
             startDate = LocalDate.of(2025, 5, 15),
             endDate = LocalDate.of(2025, 5, 15),
@@ -491,7 +501,7 @@ fun CalendarPreview() {
         ),
         Event(
             id = 13,
-            color = Color.Gray,
+            color = Color(0xFF9575CD),
             title = "Fin de clases",
             startDate = LocalDate.of(2025, 5, 30),
             endDate = LocalDate.of(2025, 5, 30),
@@ -507,7 +517,7 @@ fun CalendarPreview() {
             startDate = LocalDate.of(2025, 11, 28),
             endDate = LocalDate.of(2025, 11, 29),
             category = EventCategory.CAREER,
-            color = Color(0xFF00BCD4), // Cian
+            color = Color(0xFFE57373), // Cian
             items = listOf(
                 EventItem(1, Icons.Default.Person, "Coordinación Instruccional de tutorías"),
                 EventItem(2, Icons.Default.Call, "123456789")
@@ -582,7 +592,6 @@ fun MultiEventDayView(
         Text(
             text = dayNumber,
             style = TextStyle(
-                color = Color.White,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
             ),

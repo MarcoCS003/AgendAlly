@@ -24,7 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.academically.data.ScheduleColors
+import com.example.academically.ui.theme.ScheduleColorsProvider
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -543,6 +543,7 @@ fun ColorPickerDialog(
     onColorSelected: (Color) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val availableColors = ScheduleColorsProvider.getColors()
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
@@ -562,7 +563,7 @@ fun ColorPickerDialog(
 
                 // Grid de colores
                 Column {
-                    ScheduleColors.colors.chunked(4).forEach { rowColors ->
+                    availableColors.chunked(4).forEach { rowColors ->
                         Row(
                             horizontalArrangement = Arrangement.SpaceEvenly,
                             modifier = Modifier.fillMaxWidth()

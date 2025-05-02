@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.academically.ui.theme.AcademicAllyTheme
 import com.example.academically.uiAcademicAlly.NavigationHost
 import com.example.academically.uiAcademicAlly.NavigationItemContent
 import com.example.academically.utils.currentRoute
@@ -34,7 +35,9 @@ class MainActivity : ComponentActivity() {
             Surface(
                 modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
             ) {
-                MainScreen()
+                AcademicAllyTheme {
+                    MainScreen()
+                }
             }
         }
     }

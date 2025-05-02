@@ -2,6 +2,7 @@ package com.example.academically.uiAcademicAlly
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -52,7 +53,10 @@ fun EventCardBlog(
             .padding(16.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = if (isSystemInDarkTheme())
+                MaterialTheme.colorScheme.surface
+            else
+                Color.White
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {

@@ -90,23 +90,3 @@ object SampleScheduleData {
     }
 }
 
-object ScheduleColors {
-    val colors = listOf(
-        Color(0xFFFFF59D), // Amarillo suave
-        Color(0xFFCE93D8), // Morado suave
-        Color(0xFF80DEEA), // Cian suave
-        Color(0xFFFFAB91), // Salmón suave
-        Color(0xFFC5E1A5), // Verde suave
-        Color(0xFFB39DDB), // Púrpura suave
-        Color(0xFFFFCC80), // Naranja suave
-        Color(0xFF90CAF9), // Azul suave
-        Color(0xFFF48FB1), // Rosa suave
-        Color(0xFF81D4FA), // Azul cielo
-        Color(0xFFFFD54F), // Ámbar
-        Color(0xFF4DB6AC), // Verde azulado
-        Color(0xFF9575CD), // Violeta profundo
-        Color(0xFFE57373), // Rojo suave
-        Color(0xFF7986CB), // Índigo suave
-        Color(0xFF4DD0E1)  // Turquesa
-    )
-}

@@ -8,6 +8,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -29,6 +31,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarViewWeek
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -54,13 +58,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.academically.ViewModel.ScheduleViewModel
 import com.example.academically.ViewModel.ScheduleViewModelFactory
-import com.example.academically.data.SampleScheduleData
 import com.example.academically.data.Schedule
 import com.example.academically.data.ScheduleTime
 import com.example.academically.data.database.AcademicAllyDatabase
@@ -84,7 +86,8 @@ fun ScheduleScreenWithViewModel(
             )
         )
     ),
-    onAddActivity: () -> Unit
+    onAddActivity: () -> Unit,
+    onEditActivity: (Schedule) -> Unit
 ) {
     val schedules by viewModel.schedules.collectAsState()
     val currentDate by viewModel.currentDate.collectAsState()
@@ -92,7 +95,6 @@ fun ScheduleScreenWithViewModel(
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
-    // Mostrar errores si existen
     error?.let { errorMessage ->
         AlertDialog(
             onDismissRequest = { viewModel.clearError() },
@@ -119,6 +121,10 @@ fun ScheduleScreenWithViewModel(
             currentDate = currentDate,
             viewMode = viewMode,
             onAddActivity = onAddActivity,
+            onEditSchedule = onEditActivity,
+            onDeleteSchedule = { schedule ->
+                viewModel.deleteSchedule(schedule)
+            },
             onViewModeChange = { viewModel.changeViewMode(it) },
             onNextDay = { viewModel.navigateToNextDay() },
             onPreviousDay = { viewModel.navigateToPreviousDay() },
@@ -128,11 +134,6 @@ fun ScheduleScreenWithViewModel(
     }
 }
 
-
-
-
-
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ScheduleScreen(
@@ -141,6 +142,8 @@ fun ScheduleScreen(
     viewMode: ViewMode,
     modifier: Modifier = Modifier,
     onAddActivity: () -> Unit,
+    onEditSchedule: (Schedule) -> Unit,
+    onDeleteSchedule: (Schedule) -> Unit,
     onViewModeChange: (ViewMode) -> Unit,
     onNextDay: () -> Unit,
     onPreviousDay: () -> Unit,
@@ -183,8 +186,6 @@ fun ScheduleScreen(
                 ViewMode.WEEKLY -> {
                     WeekNavigationHeader(
                         currentDate = currentDate,
-                        onPreviousWeek = onPreviousWeek,
-                        onNextWeek = onNextWeek,
                         onViewModeChange = { onViewModeChange(ViewMode.DAILY) }
                     )
                 }
@@ -211,15 +212,18 @@ fun ScheduleScreen(
                             schedules = schedules,
                             currentDay = currentDay,
                             startHour = startHour,
-                            endHour = endHour
+                            endHour = endHour,
+                            onEditSchedule = onEditSchedule,
+                            onDeleteSchedule = onDeleteSchedule
                         )
                     }
                     ViewMode.WEEKLY -> {
                         WeeklyScheduleView(
                             schedules = schedules,
-                            currentDate = currentDate,
                             startHour = startHour,
-                            endHour = endHour
+                            endHour = endHour,
+                            onEdit = onEditSchedule,
+                            onDelete = onDeleteSchedule
                         )
                     }
                 }
@@ -227,8 +231,6 @@ fun ScheduleScreen(
         }
     }
 }
-
-
 @RequiresApi(Build.VERSION_CODES.O)
 private fun calculateHourRange(schedules: List<Schedule>): Pair<Int, Int> {
     if (schedules.isEmpty()) return Pair(9, 17) // Valores por defecto
@@ -297,7 +299,9 @@ fun DailyScheduleView(
     currentDay: DaysOfWeek,
     startHour: Int,
     endHour: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onEditSchedule: (Schedule) -> Unit,
+    onDeleteSchedule: (Schedule) -> Unit
 ) {
     val hourHeight = 100
     val scrollState = rememberScrollState()
@@ -336,13 +340,17 @@ fun DailyScheduleView(
                         schedule = schedule,
                         time = time,
                         hourHeight = hourHeight,
-                        baseHour = startHour
+                        baseHour = startHour,
+                        onEdit = { onEditSchedule(schedule) },
+                        onDelete = { onDeleteSchedule(schedule) }
                     )
                 }
             }
         }
     }
 }
+
+
 
 @Composable
 fun TimeGridBackground(
@@ -402,7 +410,9 @@ fun PositionedScheduleCard(
     time: ScheduleTime,
     hourHeight: Int,
     baseHour: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
 ) {
     val minutesPerPixel = hourHeight / 60f
 
@@ -422,70 +432,144 @@ fun PositionedScheduleCard(
             .padding(start = 4.dp, end = 4.dp)
             .offset(y = topOffset)
             .height(cardHeight)
-            .fillMaxWidth()
+            .fillMaxWidth(),
+        onEdit = onEdit,
+        onDelete = onDelete
     )
 }
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ScheduleCard(
     schedule: Schedule,
     time: ScheduleTime,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
 ) {
+    var showActions by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
     Card(
-        modifier = modifier,
+        modifier = modifier
+            .clickable { showActions = !showActions },
         colors = CardDefaults.cardColors(
-            containerColor = schedule.color.copy(alpha = 0.9f)
+            containerColor = schedule.color
         ),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp)
-        ) {
-            Text(
-                text = schedule.name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                color = Color.Black
-            )
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp)
+            ) {
+                Text(
+                    text = schedule.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    color = Color.Black
+                )
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = schedule.place,
-                style = MaterialTheme.typography.bodyMedium,
-                fontSize = 12.sp,
-                color = Color.Black
-            )
-
-            // Mostrar horario específico
-            Text(
-                text = "${time.hourStart.toString().substring(0, 5)} - ${time.hourEnd.toString().substring(0, 5)}",
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 11.sp,
-                color = Color.Black.copy(alpha = 0.7f)
-            )
-
-            if (time.hourEnd.hour - time.hourStart.hour > 1) { // Mostrar profesor si hay espacio
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "Docente: ${schedule.teacher}",
+                    text = schedule.place,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontSize = 12.sp,
+                    color = Color.Black
+                )
+
+                // Mostrar horario específico
+                Text(
+                    text = "${time.hourStart.toString().substring(0, 5)} - ${time.hourEnd.toString().substring(0, 5)}",
                     style = MaterialTheme.typography.bodySmall,
                     fontSize = 11.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    color = Color.Black.copy(alpha = 0.8f)
+                    color = Color.Black.copy(alpha = 0.7f)
                 )
+
+                if (time.hourEnd.hour - time.hourStart.hour > 1) { // Mostrar profesor si hay espacio
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "Docente: ${schedule.teacher}",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontSize = 11.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = Color.Black.copy(alpha = 0.8f)
+                    )
+                }
+            }
+
+            // Mostrar botones de acción cuando se hace clic
+            if (showActions) {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(8.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    IconButton(
+                        onClick = onEdit,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(Color.White.copy(alpha = 0.5f), CircleShape)
+                    ) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Editar",
+                            tint = Color.Black,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier =Modifier.size(30.dp))
+                    IconButton(
+                        onClick = { showDeleteDialog = true },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(Color.White.copy(alpha = 0.5f), CircleShape)
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Eliminar",
+                            tint = Color.Black,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
             }
         }
+    }
+
+    // Diálogo de confirmación de eliminación
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Eliminar actividad") },
+            text = { Text("¿Estás seguro de que deseas eliminar esta actividad?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDelete()
+                        showDeleteDialog = false
+                    }
+                ) {
+                    Text("Eliminar", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 }
 
@@ -500,25 +584,5 @@ private fun convertDayOfWeekToDaysOfWeek(dayOfWeek: DayOfWeek): DaysOfWeek {
         DayOfWeek.FRIDAY -> DaysOfWeek.VIERNES
         DayOfWeek.SATURDAY -> DaysOfWeek.SABADO
         DayOfWeek.SUNDAY -> DaysOfWeek.DOMINGO
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Preview(showBackground = true)
-@Composable
-fun ScheduleScreenPreview() {
-    MaterialTheme {
-        ScheduleScreen(
-            schedules = SampleScheduleData.getSampleSchedules(),
-            onAddActivity = {},
-            currentDate = TODO(),
-            viewMode = TODO(),
-            modifier = TODO(),
-            onViewModeChange = TODO(),
-            onNextDay = TODO(),
-            onPreviousDay = TODO(),
-            onNextWeek = TODO(),
-            onPreviousWeek = TODO()
-        )
     }
 }
