@@ -2,8 +2,12 @@ package com.example.academically.data
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import com.example.academically.uiAcademicAlly.DaysOfWeek
+import com.example.academically.ui.theme.DarkThemeScheduleColors
+import com.example.academically.ui.theme.LightThemeScheduleColors
+import com.example.academically.uiAcademicAlly.calendar.DaysOfWeek
 import java.time.LocalTime
 
 data class ScheduleTime(
@@ -14,13 +18,19 @@ data class ScheduleTime(
 
 data class Schedule(
     val id: Int,
-    val color: Color,
+    val colorIndex: Int, // Reemplaza color: Color con colorIndex: Int
     val name: String,
     val place: String,
     val teacher: String,
     val times: List<ScheduleTime>
 ) {
-
+    // Propiedad para obtener el color según el tema actual
+    @Composable
+    fun getColor(): Color {
+        val isDarkTheme = isSystemInDarkTheme()
+        val colors = if (isDarkTheme) DarkThemeScheduleColors else LightThemeScheduleColors
+        return colors.getOrElse(colorIndex) { colors.first() }
+    }
 }
 
 object SampleScheduleData {
@@ -29,7 +39,7 @@ object SampleScheduleData {
         return listOf(
             Schedule(
                 id = 1,
-                color = Color(0xFFFFF59D), // Amarillo
+                colorIndex = 1, // Amarillo
                 name = "ADMINISTRACIÓN GERENCIAL",
                 place = "Aula: 07A",
                 teacher = "MARIA JUANA CONTRERAS GUZMAN",
@@ -40,7 +50,7 @@ object SampleScheduleData {
             ),
             Schedule(
                 id = 2,
-                color = Color(0xFFCE93D8), // Morado claro
+                colorIndex = 2, // Morado claro
                 name = "ADMINISTRACIÓN DE PROYECTOS",
                 place = "Aula: 07D",
                 teacher = "ANA MARIA SOSA PINTLE",
@@ -52,7 +62,7 @@ object SampleScheduleData {
             ),
             Schedule(
                 id = 3,
-                color = Color(0xFF80DEEA), // Cian claro
+                colorIndex =3, // Cian claro
                 name = "SISTEMAS WEB Y SERVICIOS ORACLE",
                 place = "Aula: 36L8",
                 teacher = "BEATRIZ PEREZ ROJAS",
@@ -64,7 +74,7 @@ object SampleScheduleData {
             ),
             Schedule(
                 id = 4,
-                color = Color(0xFFFFAB91), // Salmón
+                colorIndex = 4, // Salmón
                 name = "CUBOS OLAP PARA INTELIGENCIA EMPRESARIAL",
                 place = "Aula: 36L3",
                 teacher = "JOSÉ OMAR RAMÍREZ MARTHA",
@@ -76,7 +86,7 @@ object SampleScheduleData {
             ),
             Schedule(
                 id = 5,
-                color = Color(0xFFC5E1A5), // Verde claro
+                colorIndex = 5, // Verde claro
                 name = "CIBERSEGURIDAD",
                 place = "Aula: 36L8",
                 teacher = "ANDRÉS MUÑOZ FLORES",

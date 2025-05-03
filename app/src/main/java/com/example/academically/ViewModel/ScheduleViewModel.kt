@@ -4,14 +4,13 @@ package com.example.academically.ViewModel
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.academically.data.Schedule
 import com.example.academically.data.ScheduleTime
 import com.example.academically.data.repositorty.ScheduleRepository
-import com.example.academically.uiAcademicAlly.ViewMode
+import com.example.academically.uiAcademicAlly.schedule.ViewMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -58,7 +57,7 @@ class ScheduleViewModel(private val repository: ScheduleRepository) : ViewModel(
         name: String,
         place: String,
         teacher: String,
-        color: Color,
+        colorIndex: Int,
         times: List<ScheduleTime>
     ) {
         viewModelScope.launch {
@@ -69,7 +68,7 @@ class ScheduleViewModel(private val repository: ScheduleRepository) : ViewModel(
                     name = name,
                     place = place,
                     teacher = teacher,
-                    color = color,
+                    colorIndex = colorIndex,
                     times = times
                 )
                 repository.insertSchedule(newSchedule)

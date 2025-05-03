@@ -1,4 +1,4 @@
-package com.example.academically.uiAcademicAlly
+package com.example.academically.uiAcademicAlly.schedule
 
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -58,10 +58,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.academically.ViewModel.ScheduleViewModel
 import com.example.academically.ViewModel.ScheduleViewModelFactory
-import com.example.academically.data.Schedule
 import com.example.academically.data.ScheduleTime
 import com.example.academically.data.database.AcademicAllyDatabase
 import com.example.academically.data.repositorty.ScheduleRepository
+import com.example.academically.uiAcademicAlly.calendar.ColorPickerDialog
+import com.example.academically.uiAcademicAlly.calendar.DaysOfWeek
 import java.time.LocalTime
 
 
@@ -94,7 +95,7 @@ fun EditScheduleActivityScreen(
 
     var title by remember { mutableStateOf(schedule.name) }
     var location by remember { mutableStateOf(schedule.place) }
-    var selectedColor by remember { mutableStateOf(schedule.color) }
+    var selectedColor by remember { mutableStateOf(schedule.colorIndex) }
     var teacherName by remember { mutableStateOf(schedule.teacher) }
     var customizePerDay by remember {
         mutableStateOf(
@@ -210,7 +211,7 @@ fun EditScheduleActivityScreen(
                     modifier = Modifier
                         .size(24.dp)
                         .clip(CircleShape)
-                        .background(selectedColor)
+                        .background(schedule.getColor())
                         .border(1.dp, Color.LightGray, CircleShape)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
@@ -318,7 +319,7 @@ fun EditScheduleActivityScreen(
                         name = title,
                         place = location,
                         teacher = teacherName,
-                        color = selectedColor,
+                        colorIndex = selectedColor,
                         times = scheduleTimes
                     )
 
@@ -348,7 +349,7 @@ fun EditScheduleActivityScreen(
     // Diálogos
     if (showColorPicker) {
         ColorPickerDialog(
-            selectedColor = selectedColor,
+            selectedColorIndex = selectedColor,
             onColorSelected = {
                 selectedColor = it
                 showColorPicker = false

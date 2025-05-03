@@ -1,20 +1,52 @@
-package com.example.academically.uiAcademicAlly
+package com.example.academically.uiAcademicAlly.calendar
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.ViewHeadline
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,38 +56,48 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.academically.ui.theme.DarkThemeScheduleColors
+import com.example.academically.ui.theme.LightThemeScheduleColors
 import com.example.academically.ui.theme.ScheduleColorsProvider
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
-import java.util.*
+import java.util.Locale
 
 
 @SuppressLint("NewApi")
 @Composable
 fun AddEventScreen(
     onBack: () -> Unit = {},
-    onAddEvent: (String, LocalDate, String, Color, String) -> Unit = { _, _, _, _, _ -> }
+    onAddEvent: (String, LocalDate, String, Int, String) -> Unit = { _, _, _, _, _ -> }
 ) {
+
     var title by remember { mutableStateOf("") }
     var selectedEndDay by remember { mutableStateOf(LocalDate.now()) }
-    var selectedColor by remember { mutableStateOf(Color(0xFF2196F3)) } // Azul por defecto
+    var selectedColor by remember { mutableIntStateOf(0) }
     var location by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    // fechas
+
+    // Añadir estado para el switch de evento de varios días
+    var isMultiDayEvent by remember { mutableStateOf(false) }
+
+    // Fechas
     var showDatePickerStart by remember { mutableStateOf(false) }
     var showDatePickerEnd by remember { mutableStateOf(false) }
-    // fecha inicio
+
+    // Fecha inicio
     var selectedCreateStartDay by remember { mutableStateOf(LocalDate.now()) }
     var selectedCreateStartEnd by remember { mutableStateOf(LocalDate.now()) }
 
     var showColorPicker by remember { mutableStateOf(false) }
 
+    val scrollState = rememberScrollState()
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
+            .verticalScroll(scrollState)
     ) {
         // Barra superior con botón de retroceso
         Row(
@@ -91,33 +133,96 @@ fun AddEventScreen(
         )
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-
-        // Selección de fecha
+        // Switch para evento de varios días
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start,
+            horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 8.dp)
         ) {
-            Row (modifier = Modifier.clickable { showDatePickerStart = true })
-            {
-                Icon(
-                imageVector = Icons.Default.DateRange,
-                contentDescription = "Fecha",
-
-                modifier = Modifier.size(32.dp)
-            )
-
             Text(
-                text = selectedCreateStartDay.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(start = 18.dp)
+                text = "Evento de varios días",
+                style = MaterialTheme.typography.bodyLarge
             )
+
+            Switch(
+                checked = isMultiDayEvent,
+                onCheckedChange = {
+                    isMultiDayEvent = it
+                    // Si activamos el switch, establecemos la fecha final igual a la inicial
+                    if (it) {
+                        selectedCreateStartEnd = selectedCreateStartDay
+                    }
+                }
+            )
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+        // Selección de fecha
+        if (isMultiDayEvent) {
+            // Mostrar dos selectores de fecha (inicio y fin)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                // Fecha de inicio
+                Column {
+                    Text(
+                        text = "Fecha de inicio",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                    Row(modifier = Modifier.clickable { showDatePickerStart = true }) {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = "Fecha inicio",
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Text(
+                            text = selectedCreateStartDay.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(20.dp))
+
+                // Fecha de fin
+                Column {
+                    Text(
+                        text = "Fecha de fin",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                    Row(modifier = Modifier.clickable { showDatePickerEnd = true }) {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = "Fecha fin",
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Text(
+                            text = selectedCreateStartEnd.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+                }
             }
-            Spacer(modifier = Modifier.width(20.dp))
-            // EndDay
-            Row (modifier = Modifier.clickable { showDatePickerEnd = true }){
+        } else {
+            // Mostrar solo un selector de fecha
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .clickable { showDatePickerStart = true }
+            ) {
                 Icon(
                     imageVector = Icons.Default.DateRange,
                     contentDescription = "Fecha",
@@ -125,7 +230,7 @@ fun AddEventScreen(
                 )
 
                 Text(
-                    text = selectedCreateStartEnd.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                    text = selectedCreateStartDay.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(start = 18.dp)
                 )
@@ -150,11 +255,12 @@ fun AddEventScreen(
 
             Spacer(modifier = Modifier.width(16.dp))
 
+            val scheduleColors = ScheduleColorsProvider.getColors()
             Box(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(selectedColor)
+                    .background(scheduleColors[selectedColor])
                     .clickable { showColorPicker = true }
             )
         }
@@ -257,21 +363,29 @@ fun AddEventScreen(
         }
     }
 
-    // Diálogo de selección de fecha
+    // Diálogo de selección de fecha de inicio
     if (showDatePickerStart) {
         DatePickerDialog(
             selectedDate = selectedCreateStartDay,
+            minDate = null, // No hay restricción para la fecha de inicio
             onDateSelected = {
                 selectedCreateStartDay = it
+                // Si es un evento de varios días, actualizar la fecha de fin
+                // para que no sea anterior a la de inicio
+                if (isMultiDayEvent && selectedCreateStartEnd.isBefore(it)) {
+                    selectedCreateStartEnd = it
+                }
                 showDatePickerStart = false
             },
             onDismiss = { showDatePickerStart = false }
         )
     }
 
+    // Diálogo de selección de fecha de fin
     if (showDatePickerEnd) {
         DatePickerDialog(
-            selectedDate = selectedEndDay,
+            selectedDate = selectedCreateStartEnd,
+            minDate = selectedCreateStartDay, // Restricción: no puede ser anterior a la fecha de inicio
             onDateSelected = {
                 selectedCreateStartEnd = it
                 showDatePickerEnd = false
@@ -280,11 +394,10 @@ fun AddEventScreen(
         )
     }
 
-
     // Diálogo de selección de color
     if (showColorPicker) {
         ColorPickerDialog(
-            selectedColor = selectedColor,
+            selectedColorIndex = selectedColor,
             onColorSelected = {
                 selectedColor = it
                 showColorPicker = false
@@ -298,15 +411,18 @@ fun AddEventScreen(
 /**
  * Diálogo para seleccionar una fecha
  */
+
 @SuppressLint("NewApi")
 @Composable
 fun DatePickerDialog(
     selectedDate: LocalDate,
+    minDate: LocalDate?, // Fecha mínima seleccionable (opcional)
     onDateSelected: (LocalDate) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val currentMonth = remember { selectedDate.month }
-    val currentYear = remember { selectedDate.year }
+    var currentMonth by remember { mutableStateOf(selectedDate.month) }
+    var currentYear by remember { mutableIntStateOf(selectedDate.year) }
+    var currentSelectedDate by remember { mutableStateOf(selectedDate) }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -321,17 +437,24 @@ fun DatePickerDialog(
             ) {
                 // Título con la fecha seleccionada
                 Text(
-                    text = "${selectedDate.dayOfMonth} de ${selectedDate.month.getDisplayName(TextStyle.FULL, Locale("es", "ES"))}",
+                    text = "${currentSelectedDate.dayOfMonth} de ${currentSelectedDate.month.getDisplayName(TextStyle.FULL, Locale("es", "ES"))}",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                // Calendario simplificado (en producción deberías usar DatePicker de Material3)
+                // Calendario
                 SimpleCalendarView(
                     currentMonth = currentMonth,
                     currentYear = currentYear,
-                    selectedDate = selectedDate,
-                    onDateSelected = onDateSelected
+                    selectedDate = currentSelectedDate,
+                    minDate = minDate,
+                    onMonthYearChanged = { month, year ->
+                        currentMonth = month
+                        currentYear = year
+                    },
+                    onDateSelected = {
+                        currentSelectedDate = it
+                    }
                 )
 
                 // Botones de acción
@@ -345,7 +468,11 @@ fun DatePickerDialog(
                         Text("Cancelar")
                     }
 
-                    TextButton(onClick = { onDateSelected(selectedDate) }) {
+                    TextButton(
+                        onClick = {
+                            onDateSelected(currentSelectedDate)
+                        }
+                    ) {
                         Text("Aceptar")
                     }
                 }
@@ -354,19 +481,28 @@ fun DatePickerDialog(
     }
 }
 
+
 /**
  * Vista simplificada de calendario
- */@SuppressLint("NewApi")
+ */
+@SuppressLint("NewApi")
 @Composable
 fun SimpleCalendarView(
     currentMonth: java.time.Month,
     currentYear: Int,
     selectedDate: LocalDate,
+    minDate: LocalDate?, // Fecha mínima seleccionable (opcional)
+    onMonthYearChanged: (java.time.Month, Int) -> Unit,
     onDateSelected: (LocalDate) -> Unit
 ) {
     // Usamos estado mutable para poder cambiar el mes y año
     var month by remember { mutableStateOf(currentMonth) }
-    var year by remember { mutableStateOf(currentYear) }
+    var year by remember { mutableIntStateOf(currentYear) }
+
+    // Observar cambios en month y year
+    LaunchedEffect(month, year) {
+        onMonthYearChanged(month, year)
+    }
 
     // Recalcular valores cuando cambian el mes o año
     val daysInMonth = remember(month, year) {
@@ -399,12 +535,17 @@ fun SimpleCalendarView(
                         year -= 1
                     }
                 },
-                enabled = !isFirstMonth || year > 2020 // Permitir retroceder si no es enero o si año > 2020
+                // Desactivar el botón si estamos en el mes mínimo o anterior
+                enabled = minDate == null ||
+                        year > minDate.year ||
+                        (year == minDate.year && month.value > minDate.month.value)
             ) {
                 Icon(
                     Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                     "Mes anterior",
-                    tint = if (!isFirstMonth || year > 2020)
+                    tint = if (minDate == null ||
+                        year > minDate.year ||
+                        (year == minDate.year && month.value > minDate.month.value))
                         LocalContentColor.current
                     else
                         LocalContentColor.current.copy(alpha = 0.38f)
@@ -430,7 +571,7 @@ fun SimpleCalendarView(
                         year += 1
                     }
                 },
-                enabled = !isLastMonth || year < 2030 // Permitir avanzar si no es diciembre o si año < 2030
+                enabled = !isLastMonth || year < 2030
             ) {
                 Icon(
                     Icons.AutoMirrored.Filled.KeyboardArrowRight,
@@ -492,6 +633,10 @@ fun SimpleCalendarView(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 week.forEach { day ->
+                    val currentDate = if (day != null) LocalDate.of(year, month, day) else null
+                    val isDateDisabled = day != null && minDate != null &&
+                            LocalDate.of(year, month, day).isBefore(minDate)
+
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
@@ -508,8 +653,10 @@ fun SimpleCalendarView(
                                     Color.Transparent
                                 }
                             )
-                            .clickable(enabled = day != null) {
-                                if (day != null) {
+                            .clickable(
+                                enabled = day != null && !isDateDisabled
+                            ) {
+                                if (day != null && !isDateDisabled) {
                                     // Crear nueva fecha y notificar
                                     val newDate = LocalDate.of(year, month, day)
                                     onDateSelected(newDate)
@@ -519,12 +666,15 @@ fun SimpleCalendarView(
                         if (day != null) {
                             Text(
                                 text = day.toString(),
-                                color = if (day == selectedDate.dayOfMonth &&
-                                    month == selectedDate.month &&
-                                    year == selectedDate.year) {
-                                    Color.White
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface
+                                color = when {
+                                    // Día seleccionado
+                                    day == selectedDate.dayOfMonth &&
+                                            month == selectedDate.month &&
+                                            year == selectedDate.year -> Color.White
+                                    // Día deshabilitado
+                                    isDateDisabled -> Color.Gray.copy(alpha = 0.5f)
+                                    // Día normal
+                                    else -> MaterialTheme.colorScheme.onSurface
                                 }
                             )
                         }
@@ -534,16 +684,21 @@ fun SimpleCalendarView(
         }
     }
 }
+
 /**
  * Diálogo para seleccionar un color
  */
 @Composable
 fun ColorPickerDialog(
-    selectedColor: Color,
-    onColorSelected: (Color) -> Unit,
+    selectedColorIndex : Int,
+    onColorSelected: (Int) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val availableColors = ScheduleColorsProvider.getColors()
+    val colors = if (isSystemInDarkTheme())
+        DarkThemeScheduleColors
+    else
+        LightThemeScheduleColors
+
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
@@ -563,20 +718,17 @@ fun ColorPickerDialog(
 
                 // Grid de colores
                 Column {
-                    availableColors.chunked(4).forEach { rowColors ->
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            rowColors.forEach { color ->
+                    colors.chunked(4).forEachIndexed { rowIndex, rowColors ->
+                        Row{
+                            rowColors.forEachIndexed { colIndex, color ->
+                                val index = rowIndex * 4 + colIndex
                                 ColorItem(
                                     color = color,
-                                    isSelected = selectedColor == color,
-                                    onClick = { onColorSelected(color) }
+                                    isSelected = selectedColorIndex == index,
+                                    onClick = { onColorSelected(index) }
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
 
@@ -648,25 +800,14 @@ fun AddEventScreenPreview() {
     }
 }
 
-@SuppressLint("NewApi")
-@Preview(showBackground = true)
-@Composable
-fun DatePickerDialogPreview() {
-    MaterialTheme {
-        DatePickerDialog(
-            selectedDate = LocalDate.now(),
-            onDateSelected = {},
-            onDismiss = {}
-        )
-    }
-}
+
 
 @Preview(showBackground = true)
 @Composable
 fun ColorPickerDialogPreview() {
     MaterialTheme {
         ColorPickerDialog(
-            selectedColor = Color(0xFF2196F3),
+            selectedColorIndex = 1 ,
             onColorSelected = {},
             onDismiss = {}
         )

@@ -1,11 +1,14 @@
-package com.example.academically.uiAcademicAlly
+package com.example.academically.uiAcademicAlly.calendar
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,8 +29,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.academically.R
 import com.example.academically.data.*
+import com.example.academically.ui.theme.ScheduleColorsProvider
 import java.time.LocalDate
 
 enum class DaysOfWeek {
@@ -118,7 +120,7 @@ fun CalendarCard(
             else
                 Color.White
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
     ) {
         Column(
             horizontalAlignment = Alignment.Start,
@@ -126,7 +128,7 @@ fun CalendarCard(
                 .padding(8.dp)
                 .animateContentSize(
                     animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
                         stiffness = Spring.StiffnessMedium
                     )
                 )
@@ -143,14 +145,20 @@ fun CalendarCard(
                     fontSize = 20.sp
                 )
 
-                IconButton(
-                    onClick = { expanded = !expanded },
-                    modifier = Modifier.size(40.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clickable { expanded = !expanded }
+                        .padding(vertical = 2.dp),
                 ) {
+                    Text("Eventos", style = TextStyle(color = Color.Gray), fontSize = 12.sp)
+                    Spacer(Modifier.size(2.dp))
                     Icon(
                         imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = if (expanded) "Colapsar" else "Expandir"
+                        contentDescription = if (expanded) "Colapsar" else "Expandir",
+                        modifier = Modifier.size(28.dp)
                     )
+
                 }
             }
 
@@ -182,12 +190,17 @@ fun TopCalendarView() {
     }
 }
 
-
+@SuppressLint("NewApi")
 @Composable
 fun CalendarArray(
     mount: MountAcademicAlly,
     processedEvents: Map<Int, ProcessedEvent>
 ) {
+    // Obtener fecha actual para destacar el día actual
+    val today = LocalDate.now()
+    val currentDay = today.dayOfMonth
+    val currentMonth = today.monthValue
+
     Column {
         for (week in mount.weeks) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -196,6 +209,9 @@ fun CalendarArray(
                         // Espacio vacío para días que no existen en este mes
                         DayView(dayNumber = "")
                     } else {
+                        // Determinar si este es el día actual
+                        val isToday = day == currentDay && mount.id == currentMonth
+
                         // Verificamos si hay un evento para este día
                         val processedEvent = processedEvents[day]
                         if (processedEvent != null) {
@@ -203,19 +219,24 @@ fun CalendarArray(
                             if (processedEvent.additionalEvents.isNotEmpty()) {
                                 MultiEventDayView(
                                     dayNumber = day.toString(),
-                                    processedEvent = processedEvent
+                                    processedEvent = processedEvent,
+                                    isToday = isToday
                                 )
                             } else {
                                 // Si solo hay un evento, usamos la visualización normal
                                 DayWithEvent(
                                     dayNumber = day.toString(),
                                     event = processedEvent.event,
-                                    shape = processedEvent.shape
+                                    shape = processedEvent.shape,
+                                    isToday = isToday
                                 )
                             }
                         } else {
                             // Día normal sin evento
-                            DayView(dayNumber = day.toString())
+                            DayView(
+                                dayNumber = day.toString(),
+                                isToday = isToday
+                            )
                         }
                     }
                 }
@@ -225,16 +246,34 @@ fun CalendarArray(
 }
 
 @Composable
-fun DayView(dayNumber: String) {
+fun DayView(
+    dayNumber: String,
+    isToday: Boolean = false
+) {
     Box(
         modifier = Modifier
             .width(40.dp)
             .height(40.dp),
         contentAlignment = Alignment.Center
     ) {
+        // Si es hoy, añadir un círculo de contorno
+        if (isToday && dayNumber.isNotEmpty()) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .border(
+                        width = 3.dp,
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = CircleShape
+                    )
+            )
+        }
+
         Text(text = dayNumber)
     }
 }
+
 
 @Composable
 fun DayWithEvent(
@@ -242,7 +281,8 @@ fun DayWithEvent(
     event: Event,
     shape: EventShape,
     modifier: Modifier = Modifier.size(40.dp),
-    additionalEvents: List<Event> = emptyList()
+    additionalEvents: List<Event> = emptyList(),
+    isToday: Boolean = false
 ) {
     // Si hay eventos adicionales, usamos la visualización tipo pastel
     if (additionalEvents.isNotEmpty()) {
@@ -254,15 +294,38 @@ fun DayWithEvent(
                 shape = shape,
                 additionalEvents = additionalEvents
             ),
-            modifier = modifier
+            modifier = modifier,
+            isToday = isToday
         )
     } else {
-        // Si solo hay un evento, usamos la visualización normal
+        // Si solo hay un evento, usamos la visualización normal con posible contorno
         Box(
-            modifier = modifier
-                .background(event.color, shape.toShape()),
+            modifier = modifier,
             contentAlignment = Alignment.Center
         ) {
+            // Fondo del evento con la forma correspondiente
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(
+                        event.color,
+                        shape.toShape()
+                    )
+            )
+
+            // Si es hoy, añadir un contorno que sigue la forma del evento
+            if (isToday) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp) // Ligeramente más grande para el contorno
+                        .border(
+                            width = 3.dp,
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = shape.toShape()
+                        )
+                )
+            }
+
             Text(
                 text = dayNumber,
                 fontWeight = FontWeight.Bold,
@@ -283,7 +346,6 @@ fun EventInformation(processedEvents: Map<Int, ProcessedEvent>) {
 
     // Filtramos eventos duplicados por ID
     val uniqueEvents = allEvents.distinctBy { it.id }
-
 
 
     // En tu composable principal:
@@ -316,7 +378,7 @@ fun EventInformation(processedEvents: Map<Int, ProcessedEvent>) {
             )
         } else {
             for (event in uniqueEvents) {
-                EventButton(event = event, onClick = {selectedEvent = event})
+                EventButton(event = event, onClick = { selectedEvent = event })
             }
         }
     }
@@ -342,14 +404,15 @@ fun EventButton(
         shape = RoundedCornerShape(6.dp),
         modifier = Modifier
             .fillMaxWidth()
+            .padding(vertical = 2.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(2.dp)
         ) {
+            val colors = ScheduleColorsProvider.getColors()
             // Indicador de color
             Box(
                 modifier = Modifier
@@ -370,15 +433,12 @@ fun EventButton(
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-
-                // Si existe descripción corta, la mostramos
-                if (event.shortDescription.isNotEmpty()) {
-                    Text(
-                        text = event.shortDescription,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                val date = formatEventDate(event.startDate, event.endDate)
+                Text(
+                    text = date,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
 
                 // Si existe ubicación, la mostramos
                 if (event.location.isNotEmpty()) {
@@ -392,7 +452,6 @@ fun EventButton(
         }
     }
 }
-
 
 
 @SuppressLint("NewApi")
@@ -532,6 +591,8 @@ fun CalendarPreview() {
         )
     )
 
+
+
     // Crear proveedor de calendario
     val calendarProvider = SystemCalendarProvider(LocalContext.current)
 
@@ -568,11 +629,13 @@ fun CalendarPreview() {
     }
 }
 
+
 @Composable
 fun MultiEventDayView(
     dayNumber: String,
     processedEvent: ProcessedEvent,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isToday: Boolean = false
 ) {
     val totalEvents = 1 + processedEvent.additionalEvents.size
     val allEvents = listOf(processedEvent.event) + processedEvent.additionalEvents
@@ -584,8 +647,21 @@ fun MultiEventDayView(
         contentAlignment = Alignment.Center
     ) {
         // Dibujamos el pastel de eventos
-        Canvas (modifier = Modifier.fillMaxSize()) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
             drawPieChart(allEvents, totalEvents)
+        }
+
+        // Si es hoy, añadir un círculo de contorno
+        if (isToday) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .border(
+                        width = 2.dp,
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = CircleShape
+                    )
+            )
         }
 
         // Texto del día sobre el pastel
@@ -599,12 +675,11 @@ fun MultiEventDayView(
         )
     }
 }
-
 /**
  * Extension function para dibujar un pastel de eventos en el Canvas
  */
 private fun DrawScope.drawPieChart(events: List<Event>, totalSlices: Int) {
-    
+
     val sweepAngle = 360f / totalSlices
 
     events.forEachIndexed { index, event ->

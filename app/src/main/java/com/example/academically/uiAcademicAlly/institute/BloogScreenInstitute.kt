@@ -1,4 +1,4 @@
-package com.example.academically.uiAcademicAlly
+package com.example.academically.uiAcademicAlly.institute
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
@@ -40,6 +40,8 @@ import com.example.academically.data.Event
 import com.example.academically.data.EventCategory
 import com.example.academically.data.EventItem
 import com.example.academically.data.EventNotification
+import com.example.academically.uiAcademicAlly.calendar.EventInfoItem
+import com.example.academically.uiAcademicAlly.calendar.formatEventDate
 import java.time.LocalDate
 
 @Composable
@@ -291,7 +293,7 @@ fun CardEventBlogPreview() {
                     startDate = LocalDate.of(2025, 6, 10),
                     endDate = LocalDate.of(2025, 6, 10),
                     category = EventCategory.PERSONAL,
-                    color = Color(0xFFE91E63), // Rosa
+                    color = Color(0xFFE91E63),// Rosa
                     notification = EventNotification(
                         id = 2,
                         time = 3600000, // 1 hora

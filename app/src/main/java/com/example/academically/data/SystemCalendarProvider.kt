@@ -2,8 +2,7 @@ package com.example.academically.data
 
 import android.annotation.SuppressLint
 import android.content.Context
-import androidx.compose.ui.graphics.Color
-import com.example.academically.uiAcademicAlly.DaysOfWeek
+import com.example.academically.uiAcademicAlly.calendar.DaysOfWeek
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.Month

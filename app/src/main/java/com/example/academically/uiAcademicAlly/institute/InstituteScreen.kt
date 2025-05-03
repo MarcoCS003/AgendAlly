@@ -1,4 +1,4 @@
-package com.example.academically.uiAcademicAlly
+package com.example.academically.uiAcademicAlly.institute
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

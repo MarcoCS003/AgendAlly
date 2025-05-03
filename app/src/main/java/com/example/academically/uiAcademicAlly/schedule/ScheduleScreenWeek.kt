@@ -1,4 +1,4 @@
-package com.example.academically.uiAcademicAlly
+package com.example.academically.uiAcademicAlly.schedule
 
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -50,6 +50,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.academically.data.Schedule
 import com.example.academically.data.ScheduleTime
+import com.example.academically.ui.theme.ScheduleColorsProvider
+import com.example.academically.uiAcademicAlly.calendar.DaysOfWeek
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -315,11 +317,13 @@ fun WeeklyScheduleCard(
     var showActions by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
+    val scheduleColors = ScheduleColorsProvider.getColors()
+
     Card(
         modifier = modifier
             .clickable { showActions = !showActions },
         colors = CardDefaults.cardColors(
-            containerColor = schedule.color.copy(alpha = 0.9f)
+            containerColor = scheduleColors[schedule.colorIndex]
         ),
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)

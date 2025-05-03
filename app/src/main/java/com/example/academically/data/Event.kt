@@ -108,6 +108,7 @@ data class Event(
                     else -> EventShape.RoundedMiddle
                 }
             }
+
             else -> shape
         }
     }
@@ -197,56 +198,6 @@ data class Event(
                 (targetYearMonth.isBefore(endYearMonth) || targetYearMonth.equals(endYearMonth))
     }
 
-    companion object {
-        /**
-         * Crea un evento que ocurre en un solo día
-         */
-        fun singleDay(
-            id: Int,
-            title: String,
-            date: LocalDate,
-            category: EventCategory = EventCategory.INSTITUTIONAL,
-            color: Color = category.color,
-            shortDescription: String = "",
-            location: String = "",
-            shape: EventShape = EventShape.RoundedFull
-        ): Event {
-            return Event(
-                id = id,
-                title = title,
-                shortDescription = shortDescription,
-                location = location,
-                startDate = date,
-                endDate = date,
-                color = color,
-                category = category,
-                shape = shape
-            )
-        }
 
-        /**
-         * Crea un evento que abarca varios días
-         */
-        fun multiDay(
-            id: Int,
-            title: String,
-            startDate: LocalDate,
-            endDate: LocalDate,
-            category: EventCategory = EventCategory.INSTITUTIONAL,
-            color: Color = category.color,
-            shortDescription: String = "",
-            location: String = ""
-        ): Event {
-            return Event(
-                id = id,
-                title = title,
-                shortDescription = shortDescription,
-                location = location,
-                startDate = startDate,
-                endDate = endDate,
-                color = color,
-                category = category
-            )
-        }
-    }
 }
+

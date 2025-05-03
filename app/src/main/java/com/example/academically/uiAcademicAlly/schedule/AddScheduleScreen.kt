@@ -1,4 +1,4 @@
-package com.example.academically.uiAcademicAlly
+package com.example.academically.uiAcademicAlly.schedule
 
 
 import android.os.Build
@@ -31,7 +31,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -41,6 +40,8 @@ import com.example.academically.data.ScheduleTime
 import com.example.academically.data.database.AcademicAllyDatabase
 import com.example.academically.data.repositorty.ScheduleRepository
 import com.example.academically.ui.theme.ScheduleColorsProvider
+import com.example.academically.uiAcademicAlly.calendar.DaysOfWeek
+import com.example.academically.uiAcademicAlly.calendar.ColorPickerDialog
 import java.time.LocalTime
 import java.util.Locale
 
@@ -59,11 +60,10 @@ fun AddScheduleActivityScreenWithViewModel(
     onNavigateBack: () -> Unit
 ) {
 
-    val availableColors = ScheduleColorsProvider.getColors()
 
     var title by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
-    var selectedColor by remember { mutableStateOf(availableColors[0]) }
+    var selectedColor by remember { mutableStateOf(0) }
     var teacherName by remember { mutableStateOf("") }
     var customizePerDay by remember { mutableStateOf(false) }
     var startTime by remember { mutableStateOf(LocalTime.of(9, 0)) }
@@ -149,11 +149,12 @@ fun AddScheduleActivityScreenWithViewModel(
                     .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val scheduleColors = ScheduleColorsProvider.getColors()
                 Box(
                     modifier = Modifier
                         .size(24.dp)
                         .clip(CircleShape)
-                        .background(selectedColor)
+                        .background(scheduleColors[selectedColor])
                         .border(1.dp, Color.LightGray, CircleShape)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
@@ -262,7 +263,7 @@ fun AddScheduleActivityScreenWithViewModel(
                         name = title,
                         place = location,
                         teacher = teacherName,
-                        color = selectedColor,
+                        colorIndex = selectedColor,
                         times = scheduleTimes
                     )
 
@@ -291,7 +292,7 @@ fun AddScheduleActivityScreenWithViewModel(
     // Diálogos
     if (showColorPicker) {
         ColorPickerDialog(
-            selectedColor = selectedColor,
+            selectedColorIndex = selectedColor,
             onColorSelected = {
                 selectedColor = it
                 showColorPicker = false

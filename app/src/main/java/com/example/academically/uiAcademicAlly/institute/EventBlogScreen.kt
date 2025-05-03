@@ -1,4 +1,4 @@
-package com.example.academically.uiAcademicAlly
+package com.example.academically.uiAcademicAlly.institute
 
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -11,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -23,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.ui.graphics.Color
 import com.example.academically.R
 import com.example.academically.data.EventItem
 import com.example.academically.data.EventNotification
@@ -227,14 +227,14 @@ fun EventBlogScreenPreview() {
                     category = EventCategory.CAREER,
                     imagePath = R.drawable.concurso.toString(),
                     color = Color(0xFF4CAF50),
-                            items = listOf(
-                            EventItem(
-                                1,
-                                Icons.Default.AttachFile,
-                                "ConcursoProgramacion.2025.pdf"
-                            ),
-                    EventItem(2, Icons.Default.AccessTime, "8:30-15:30")
-                ),
+                    items = listOf(
+                        EventItem(
+                            1,
+                            Icons.Default.AttachFile,
+                            "ConcursoProgramacion.2025.pdf"
+                        ),
+                        EventItem(2, Icons.Default.AccessTime, "8:30-15:30")
+                    ),
                 ),
                 Event(
                     id = 4,

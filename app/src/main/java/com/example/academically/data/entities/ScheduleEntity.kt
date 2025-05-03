@@ -10,8 +10,8 @@ data class ScheduleEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
 
-    @ColumnInfo(name = "color")
-    val color: Int, // Se almacenará como un entero representando el color
+    @ColumnInfo(name = "color_index")
+    val colorIndex: Int, // Se almacenará como un entero representando el color
 
     @ColumnInfo(name = "name")
     val name: String,

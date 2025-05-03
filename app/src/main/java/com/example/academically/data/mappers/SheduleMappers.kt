@@ -2,21 +2,19 @@ package com.example.academically.data.mappers
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import com.example.academically.data.Schedule
 import com.example.academically.data.ScheduleTime
 import com.example.academically.data.entities.ScheduleEntity
 import com.example.academically.data.entities.ScheduleTimeEntity
 import com.example.academically.data.entities.ScheduleWithTimes
-import com.example.academically.uiAcademicAlly.DaysOfWeek
+import com.example.academically.uiAcademicAlly.calendar.DaysOfWeek
 import java.time.LocalTime
 
 // Conversiones de Schedule a Entity
 fun Schedule.toEntity(): ScheduleEntity {
     return ScheduleEntity(
         id = this.id,
-        color = this.color.toArgb(),
+        colorIndex = this.colorIndex,
         name = this.name,
         place = this.place,
         teacher = this.teacher
@@ -39,7 +37,7 @@ fun ScheduleTime.toEntity(scheduleId: Int): ScheduleTimeEntity {
 fun ScheduleWithTimes.toDomainModel(): Schedule {
     return Schedule(
         id = this.schedule.id,
-        color = Color(this.schedule.color),
+        colorIndex = this.schedule.colorIndex,
         name = this.schedule.name,
         place = this.schedule.place,
         teacher = this.schedule.teacher,

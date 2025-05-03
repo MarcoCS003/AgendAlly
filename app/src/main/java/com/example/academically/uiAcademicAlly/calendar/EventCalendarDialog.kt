@@ -1,4 +1,4 @@
-package com.example.academically.uiAcademicAlly
+package com.example.academically.uiAcademicAlly.calendar
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.academically.R
 import com.example.academically.data.*
+import com.example.academically.ui.theme.ScheduleColorsProvider
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -165,7 +166,6 @@ fun EventHeader(event: Event) {
                 text = "${event.category.name}: ${event.title}",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = event.color
             )
         }
     }

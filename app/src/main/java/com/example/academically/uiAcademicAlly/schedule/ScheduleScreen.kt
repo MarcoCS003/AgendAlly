@@ -1,4 +1,4 @@
-package com.example.academically.uiAcademicAlly
+package com.example.academically.uiAcademicAlly.schedule
 
 
 import android.os.Build
@@ -67,6 +67,7 @@ import com.example.academically.data.Schedule
 import com.example.academically.data.ScheduleTime
 import com.example.academically.data.database.AcademicAllyDatabase
 import com.example.academically.data.repositorty.ScheduleRepository
+import com.example.academically.uiAcademicAlly.calendar.DaysOfWeek
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.TextStyle
@@ -455,7 +456,7 @@ fun ScheduleCard(
         modifier = modifier
             .clickable { showActions = !showActions },
         colors = CardDefaults.cardColors(
-            containerColor = schedule.color
+            containerColor = schedule.getColor()
         ),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
