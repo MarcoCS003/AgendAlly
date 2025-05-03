@@ -1,7 +1,6 @@
 package com.example.academically.uiAcademicAlly.calendar
 
 import android.annotation.SuppressLint
-import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -182,7 +181,7 @@ fun TopCalendarView() {
         horizontalArrangement = Arrangement.SpaceAround,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
+            .padding(vertical = 8.dp)
     ) {
         for (day in DaysOfWeek.entries) {
             Text(text = "${day.name.first()}", fontSize = 10.sp)
@@ -327,8 +326,7 @@ fun DayWithEvent(
             }
 
             Text(
-                text = dayNumber,
-                fontWeight = FontWeight.Bold,
+                text = dayNumber
             )
         }
     }
@@ -357,7 +355,7 @@ fun EventInformation(processedEvents: Map<Int, ProcessedEvent>) {
     selectedEvent?.let { event ->
         EventDetailCard(
             event = event,
-            onDismiss = { selectedEvent = null },
+            onEdit = { selectedEvent = null },
             onDelete = { /* Implementar eliminación */ },
         )
     }
@@ -669,7 +667,7 @@ fun MultiEventDayView(
             text = dayNumber,
             style = TextStyle(
                 fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
             ),
             modifier = Modifier.align(Alignment.Center)
         )

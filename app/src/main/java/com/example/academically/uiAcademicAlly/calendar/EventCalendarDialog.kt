@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.academically.R
 import com.example.academically.data.*
-import com.example.academically.ui.theme.ScheduleColorsProvider
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -34,11 +33,11 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun EventDetailCard(
     event: Event,
-    onDismiss: () -> Unit = {},
+    onEdit: () -> Unit = {},
     onDelete: () -> Unit = {},
 ) {
     val scrollState = rememberScrollState()
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(onDismissRequest = onEdit) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -72,7 +71,9 @@ fun EventDetailCard(
                     Image(
                         painter = painterResource(id = event.imagePath.toInt()),
                         contentDescription = "Imagen del evento",
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 8.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp, horizontal = 8.dp)
                     )
                     Spacer(Modifier.padding(5.dp))
                 }
@@ -126,13 +127,14 @@ fun EventDetailCard(
                         )
                     }
 
-                    // Botón de ocultar
-                    IconButton(onClick = onDismiss) {
-                        Icon(
-                            imageVector = Icons.Default.RemoveRedEye,
-                            contentDescription = "Ocultar Evento",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                    if (event.category.equals(EventCategory.PERSONAL)) {
+                        // Botón de editar
+                        IconButton(onClick = onEdit) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Editar evento"
+                            )
+                        }
                     }
                 }
             }
@@ -237,7 +239,12 @@ fun formatEventDate(startDate: LocalDate?, endDate: LocalDate?): String {
     val formatter = DateTimeFormatter.ofPattern("d 'de' MMMM")
 
     return if (endDate != null && !startDate.isEqual(endDate)) {
-        "${startDate.dayOfMonth} - ${endDate.dayOfMonth} ${startDate.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale("es", "ES"))}"
+        "${startDate.dayOfMonth} - ${endDate.dayOfMonth} ${
+            startDate.month.getDisplayName(
+                java.time.format.TextStyle.FULL,
+                java.util.Locale("es", "ES")
+            )
+        }"
     } else {
         startDate.format(formatter)
     }
