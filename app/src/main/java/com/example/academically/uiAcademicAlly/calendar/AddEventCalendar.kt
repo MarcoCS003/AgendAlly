@@ -5,16 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,39 +14,25 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.ViewHeadline
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.academically.ViewModel.EventViewModel
+import com.example.academically.data.Event
+import com.example.academically.data.EventCategory
+import com.example.academically.data.EventShape
+import com.example.academically.data.database.AcademicAllyDatabase
+import com.example.academically.data.repository.EventRepository
 import com.example.academically.ui.theme.DarkThemeScheduleColors
 import com.example.academically.ui.theme.LightThemeScheduleColors
 import com.example.academically.ui.theme.ScheduleColorsProvider
@@ -63,15 +40,21 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
-import java.util.Locale
-
+import java.util.*
 
 @SuppressLint("NewApi")
 @Composable
-fun AddEventScreen(
+fun AddEventScreenWithViewModel(
     onBack: () -> Unit = {},
-    onAddEvent: (String, LocalDate, String, Int, String) -> Unit = { _, _, _, _, _ -> }
+    viewModel: EventViewModel
 ) {
+    // Inicializar ViewModel
+    val context = LocalContext.current
+    val database = AcademicAllyDatabase.getDatabase(context)
+    val repository = EventRepository(database.eventDao())
+    val eventViewModel: EventViewModel = viewModel(
+        factory = EventViewModel.Factory(repository)
+    )
 
     var title by remember { mutableStateOf("") }
     var selectedEndDay by remember { mutableStateOf(LocalDate.now()) }
@@ -92,325 +75,355 @@ fun AddEventScreen(
 
     var showColorPicker by remember { mutableStateOf(false) }
 
+    // Estado para mostrar cargando
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    // Estado para errores
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    // Mostrar SnackBar para errores
+    errorMessage?.let { message ->
+        LaunchedEffect(message) {
+            // Aquí podrías mostrar un SnackBar con el mensaje de error
+        }
+    }
+
     val scrollState = rememberScrollState()
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(scrollState)
-    ) {
-        // Barra superior con botón de retroceso
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+
+    errorMessage?.let { message ->
+        LaunchedEffect(message) {
+            // Aquí podrías mostrar un SnackBar con el mensaje de error
+        }
+    }
+
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Contenido principal
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(scrollState)
         ) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Volver"
+            // Barra superior con botón de retroceso
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Volver"
+                    )
+                }
+
+                Text(
+                    text = "Añadir Evento",
+                    style = MaterialTheme.typography.titleLarge
                 )
             }
 
-            Text(
-                text = "Añadir Evento",
-                style = MaterialTheme.typography.titleLarge
-            )
-        }
-
-        // Campo de título
-        OutlinedTextField(
-            value = title,
-            onValueChange = { title = it },
-            label = { Text("Añadir título", fontSize = 28.sp) },
-            modifier = Modifier.fillMaxWidth(),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = Color.Gray.copy(alpha = 0.5f)
-            ),
-            singleLine = true,
-        )
-
-        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-        // Switch para evento de varios días
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-        ) {
-            Text(
-                text = "Evento de varios días",
-                style = MaterialTheme.typography.bodyLarge
+            // Campo de título
+            OutlinedTextField(
+                value = title,
+                onValueChange = { title = it },
+                label = { Text("Añadir título", fontSize = 28.sp) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.5f)
+                ),
+                singleLine = true,
             )
 
-            Switch(
-                checked = isMultiDayEvent,
-                onCheckedChange = {
-                    isMultiDayEvent = it
-                    // Si activamos el switch, establecemos la fecha final igual a la inicial
-                    if (it) {
-                        selectedCreateStartEnd = selectedCreateStartDay
-                    }
-                }
-            )
-        }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-        // Selección de fecha
-        if (isMultiDayEvent) {
-            // Mostrar dos selectores de fecha (inicio y fin)
+            // Switch para evento de varios días
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
             ) {
-                // Fecha de inicio
-                Column {
-                    Text(
-                        text = "Fecha de inicio",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
-                    )
-                    Row(modifier = Modifier.clickable { showDatePickerStart = true }) {
-                        Icon(
-                            imageVector = Icons.Default.DateRange,
-                            contentDescription = "Fecha inicio",
-                            modifier = Modifier.size(32.dp)
-                        )
+                Text(
+                    text = "Evento de varios días",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+
+                Switch(
+                    checked = isMultiDayEvent,
+                    onCheckedChange = {
+                        isMultiDayEvent = it
+                        // Si activamos el switch, establecemos la fecha final igual a la inicial
+                        if (it) {
+                            selectedCreateStartEnd = selectedCreateStartDay
+                        }
+                    }
+                )
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+            // Selección de fecha
+            if (isMultiDayEvent) {
+                // Mostrar dos selectores de fecha (inicio y fin)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                ) {
+                    // Fecha de inicio
+                    Column {
                         Text(
-                            text = selectedCreateStartDay.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(start = 8.dp)
+                            text = "Fecha de inicio",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
                         )
+                        Row(modifier = Modifier.clickable { showDatePickerStart = true }) {
+                            Icon(
+                                imageVector = Icons.Default.DateRange,
+                                contentDescription = "Fecha inicio",
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Text(
+                                text = selectedCreateStartDay.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(20.dp))
+
+                    // Fecha de fin
+                    Column {
+                        Text(
+                            text = "Fecha de fin",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                        Row(modifier = Modifier.clickable { showDatePickerEnd = true }) {
+                            Icon(
+                                imageVector = Icons.Default.DateRange,
+                                contentDescription = "Fecha fin",
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Text(
+                                text = selectedCreateStartEnd.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
                     }
                 }
-
-                Spacer(modifier = Modifier.width(20.dp))
-
-                // Fecha de fin
-                Column {
-                    Text(
-                        text = "Fecha de fin",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
+            } else {
+                // Mostrar solo un selector de fecha
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                        .clickable { showDatePickerStart = true }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = "Fecha",
+                        modifier = Modifier.size(32.dp)
                     )
-                    Row(modifier = Modifier.clickable { showDatePickerEnd = true }) {
-                        Icon(
-                            imageVector = Icons.Default.DateRange,
-                            contentDescription = "Fecha fin",
-                            modifier = Modifier.size(32.dp)
-                        )
-                        Text(
-                            text = selectedCreateStartEnd.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
-                    }
+
+                    Text(
+                        text = selectedCreateStartDay.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(start = 18.dp)
+                    )
                 }
             }
-        } else {
-            // Mostrar solo un selector de fecha
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+            // Selección de color
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Start,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
-                    .clickable { showDatePickerStart = true }
+            ) {
+                Text(
+                    text = "Color",
+                    fontSize = 18.sp,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                val scheduleColors = ScheduleColorsProvider.getColors()
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (scheduleColors.isNotEmpty())
+                                scheduleColors[selectedColor % scheduleColors.size]
+                            else
+                                Color.Gray
+                        )
+                        .clickable { showColorPicker = true }
+                )
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+            // Campo de ubicación
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Default.DateRange,
-                    contentDescription = "Fecha",
+                    imageVector = Icons.Default.LocationOn,
+                    contentDescription = "Ubicación",
                     modifier = Modifier.size(32.dp)
                 )
 
-                Text(
-                    text = selectedCreateStartDay.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(start = 18.dp)
+                OutlinedTextField(
+                    value = location,
+                    onValueChange = { location = it },
+                    placeholder = { Text("Añadir ubicación") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = Color.Transparent
+                    ),
+                    singleLine = true
                 )
+            }
+
+            // Campo de descripción
+            Row(
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.Start,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ViewHeadline,
+                    contentDescription = "Descripción",
+                    modifier = Modifier.size(32.dp)
+                )
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    placeholder = { Text("Añadir descripción") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = Color.Transparent
+                    ),
+                    minLines = 3
+                )
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Botón de agregar
+            Button(
+                onClick = {
+                    // Crear evento
+                    val newEvent = Event(
+                        id = 0, // El ID lo asignará Room
+                        title = title,
+                        shortDescription = description,
+                        longDescription = description,
+                        location = location,
+                        colorIndex = selectedColor,
+                        startDate = selectedCreateStartDay,
+                        endDate = if (isMultiDayEvent) selectedCreateStartEnd else selectedCreateStartDay,
+                        category = EventCategory.PERSONAL,
+                        shape = EventShape.RoundedFull
+                    )
+
+                    // Guardar el evento
+                    viewModel.insertEvent(newEvent)
+                    // Volver atrás
+                    onBack()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                shape = RoundedCornerShape(8.dp),
+                enabled = title.isNotEmpty() && !isLoading
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Agregar")
+                }
             }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-
-        // Selección de color
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-        ) {
-            Text(
-                text = "Color",
-                fontSize = 18.sp,
-                style = MaterialTheme.typography.bodyLarge
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            val scheduleColors = ScheduleColorsProvider.getColors()
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(scheduleColors[selectedColor])
-                    .clickable { showColorPicker = true }
+        // Diálogos
+        // Diálogo de selección de fecha de inicio
+        if (showDatePickerStart) {
+            DatePickerDialog(
+                selectedDate = selectedCreateStartDay,
+                minDate = null, // No hay restricción para la fecha de inicio
+                onDateSelected = {
+                    selectedCreateStartDay = it
+                    // Si es un evento de varios días, actualizar la fecha de fin
+                    // para que no sea anterior a la de inicio
+                    if (isMultiDayEvent && selectedCreateStartEnd.isBefore(it)) {
+                        selectedCreateStartEnd = it
+                    }
+                    showDatePickerStart = false
+                },
+                onDismiss = { showDatePickerStart = false }
             )
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-
-        // Campo de ubicación
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.LocationOn,
-                contentDescription = "Ubicación",
-                modifier = Modifier.size(32.dp)
-            )
-
-            OutlinedTextField(
-                value = location,
-                onValueChange = { location = it },
-                placeholder = { Text("Añadir ubicación") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 8.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = Color.Transparent
-                ),
-                singleLine = true
-            )
-        }
-
-        // Botón de notificación
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start,
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { /* Abrir configuración de notificación */ }
-                .padding(vertical = 8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Notifications,
-                contentDescription = "Notificación",
-                modifier = Modifier.size(32.dp)
-            )
-
-            Text(
-                text = "Personalizar notificación",
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(start = 16.dp)
-            )
-        }
-
-        // Campo de descripción
-        Row(
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.Start,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.ViewHeadline,
-                contentDescription = "Descripción",
-                modifier = Modifier.size(32.dp)
-            )
-
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                placeholder = { Text("Añadir descripción") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 8.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = Color.Transparent
-                ),
-                minLines = 3
-            )
-        }
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Botón de agregar
-        Button(
-            onClick = {
-                onAddEvent(title, selectedCreateStartDay, location, selectedColor, description)
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Text("Agregar")
-        }
-    }
-
-    // Diálogo de selección de fecha de inicio
-    if (showDatePickerStart) {
-        DatePickerDialog(
-            selectedDate = selectedCreateStartDay,
-            minDate = null, // No hay restricción para la fecha de inicio
-            onDateSelected = {
-                selectedCreateStartDay = it
-                // Si es un evento de varios días, actualizar la fecha de fin
-                // para que no sea anterior a la de inicio
-                if (isMultiDayEvent && selectedCreateStartEnd.isBefore(it)) {
+        // Diálogo de selección de fecha de fin
+        if (showDatePickerEnd) {
+            DatePickerDialog(
+                selectedDate = selectedCreateStartEnd,
+                minDate = selectedCreateStartDay, // Restricción: no puede ser anterior a la fecha de inicio
+                onDateSelected = {
                     selectedCreateStartEnd = it
-                }
-                showDatePickerStart = false
-            },
-            onDismiss = { showDatePickerStart = false }
-        )
-    }
+                    showDatePickerEnd = false
+                },
+                onDismiss = { showDatePickerEnd = false }
+            )
+        }
 
-    // Diálogo de selección de fecha de fin
-    if (showDatePickerEnd) {
-        DatePickerDialog(
-            selectedDate = selectedCreateStartEnd,
-            minDate = selectedCreateStartDay, // Restricción: no puede ser anterior a la fecha de inicio
-            onDateSelected = {
-                selectedCreateStartEnd = it
-                showDatePickerEnd = false
-            },
-            onDismiss = { showDatePickerEnd = false }
-        )
-    }
-
-    // Diálogo de selección de color
-    if (showColorPicker) {
-        ColorPickerDialog(
-            selectedColorIndex = selectedColor,
-            onColorSelected = {
-                selectedColor = it
-                showColorPicker = false
-            },
-            onDismiss = { showColorPicker = false }
-        )
+        // Diálogo de selección de color
+        if (showColorPicker) {
+            ColorPickerDialog(
+                selectedColorIndex = selectedColor,
+                onColorSelected = {
+                    selectedColor = it
+                    showColorPicker = false
+                },
+                onDismiss = { showColorPicker = false }
+            )
+        }
     }
 }
-
-
-/**
- * Diálogo para seleccionar una fecha
- */
 
 @SuppressLint("NewApi")
 @Composable
@@ -482,9 +495,6 @@ fun DatePickerDialog(
 }
 
 
-/**
- * Vista simplificada de calendario
- */
 @SuppressLint("NewApi")
 @Composable
 fun SimpleCalendarView(
@@ -508,8 +518,14 @@ fun SimpleCalendarView(
     val daysInMonth = remember(month, year) {
         YearMonth.of(year, month).lengthOfMonth()
     }
+
+    // CORRECCIÓN: Usar la misma lógica que en CalendarScreen
     val firstDayOfMonth = remember(month, year) {
-        LocalDate.of(year, month, 1).dayOfWeek.value
+        // Obtenemos el día de la semana (1=lunes, 2=martes, ..., 7=domingo)
+        val dayOfWeek = LocalDate.of(year, month, 1).dayOfWeek.value
+
+        // Ajustamos para que domingo sea 0, lunes sea 1, etc.
+        if (dayOfWeek == 7) 0 else dayOfWeek
     }
 
     // Calcular límites para los botones
@@ -589,7 +605,8 @@ fun SimpleCalendarView(
             horizontalArrangement = Arrangement.SpaceEvenly,
             modifier = Modifier.fillMaxWidth()
         ) {
-            listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom").forEach { day ->
+            // Usar Dom, Lun, Mar, etc.
+            listOf("Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb").forEach { day ->
                 Text(
                     text = day,
                     modifier = Modifier.width(36.dp),
@@ -605,7 +622,13 @@ fun SimpleCalendarView(
         var currentWeek = mutableListOf<Int?>()
 
         // Añadir espacios vacíos para el primer día
-        repeat(firstDayOfMonth - 1) {
+        // CORRECCIÓN: La lógica para colocar los días debe coincidir con CalendarScreen
+        val spacesToAdd = when (firstDayOfMonth) {
+            0 -> 0 // Si es domingo (0), no añadir espacios
+            else -> firstDayOfMonth // Si no, añadir espacios según el día de la semana
+        }
+
+        repeat(spacesToAdd) {
             currentWeek.add(null)
         }
 
@@ -685,12 +708,9 @@ fun SimpleCalendarView(
     }
 }
 
-/**
- * Diálogo para seleccionar un color
- */
 @Composable
 fun ColorPickerDialog(
-    selectedColorIndex : Int,
+    selectedColorIndex: Int,
     onColorSelected: (Int) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -719,7 +739,7 @@ fun ColorPickerDialog(
                 // Grid de colores
                 Column {
                     colors.chunked(4).forEachIndexed { rowIndex, rowColors ->
-                        Row{
+                        Row {
                             rowColors.forEachIndexed { colIndex, color ->
                                 val index = rowIndex * 4 + colIndex
                                 ColorItem(
@@ -781,35 +801,9 @@ fun ColorItem(
     }
 }
 
-/**
- * Formatea una fecha para mostrarla
- */
 @SuppressLint("NewApi")
 fun formatDate(date: LocalDate): String {
     val dayOfWeek = date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale("es", "ES"))
     val month = date.month
     return "$dayOfWeek, ${date.dayOfMonth} de $month"
-}
-
-@SuppressLint("NewApi")
-@Preview(showBackground = true)
-@Composable
-fun AddEventScreenPreview() {
-    MaterialTheme {
-        AddEventScreen()
-    }
-}
-
-
-
-@Preview(showBackground = true)
-@Composable
-fun ColorPickerDialogPreview() {
-    MaterialTheme {
-        ColorPickerDialog(
-            selectedColorIndex = 1 ,
-            onColorSelected = {},
-            onDismiss = {}
-        )
-    }
 }

@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.ui.graphics.Color
 import com.example.academically.R
+import com.example.academically.data.EventInstitute
 import com.example.academically.data.EventItem
 import com.example.academically.data.EventNotification
 
@@ -34,11 +35,11 @@ enum class EventTab {
 
 @Composable
 fun EventBlogScreen(
-    events: List<Event>,
+    events: List<EventInstitute>,
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableStateOf(EventTab.INSTITUTE) }
-    var selectedEvent by remember { mutableStateOf<Event?>(null) }
+    var selectedEvent by remember { mutableStateOf<EventInstitute?>(null) }
 
     // Filtrar eventos según la pestaña seleccionada
     val filteredEvents = remember(selectedTab, events) {
@@ -161,7 +162,7 @@ fun EventBlogScreenPreview() {
     MaterialTheme {
         EventBlogScreen(
             events = listOf(
-                Event(
+                EventInstitute(
                     id = 1,
                     title = "INNOVATECNMN 2025",
                     shortDescription = "Registro para estudiantes lider",
@@ -204,7 +205,7 @@ fun EventBlogScreenPreview() {
                         message = "Convocatoria Servicio Social mañana",
                         isEnabled = true
                     )),
-                Event(
+                EventInstitute(
                     id = 2,
                     title = "Congreso Internacional en agua limpia y saneamiento del TECNM",
                     shortDescription = "Registro para estudiantes",
@@ -216,7 +217,7 @@ fun EventBlogScreenPreview() {
                     imagePath = R.drawable.congreso.toString(),
                     color = Color(0xFF2196F3)
                 ),
-                Event(
+                EventInstitute(
                     id = 3,
                     title = "Concurso de Programación 2025",
                     shortDescription = "Para estudiantes de TICS",
@@ -236,7 +237,7 @@ fun EventBlogScreenPreview() {
                         EventItem(2, Icons.Default.AccessTime, "8:30-15:30")
                     ),
                 ),
-                Event(
+                EventInstitute(
                     id = 4,
                     title = "Jornadas de TICS 2025",
                     shortDescription = "Conferencias internacionales",
@@ -247,7 +248,7 @@ fun EventBlogScreenPreview() {
                     category = EventCategory.CAREER,
                     color = Color(0xFF4CAF50)
                 ),
-                Event(
+                EventInstitute(
                     id = 5,
                     title = "Plática de Servicio Social",
                     shortDescription = "Información importante",

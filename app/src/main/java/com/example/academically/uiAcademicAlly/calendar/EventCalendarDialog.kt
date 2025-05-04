@@ -1,6 +1,10 @@
+@file:Suppress("IMPLICIT_CAST_TO_ANY")
+
 package com.example.academically.uiAcademicAlly.calendar
 
 import android.annotation.SuppressLint
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -17,27 +21,59 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.example.academically.R
-import com.example.academically.data.*
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.academically.ViewModel.EventViewModel
+import com.example.academically.data.Event
+import com.example.academically.data.database.AcademicAllyDatabase
+import com.example.academically.data.repository.EventRepository
+import com.example.academically.ui.theme.ScheduleColorsProvider
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 /**
  * Tarjeta de detalles del evento que se muestra al seleccionar un evento
  */
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun EventDetailCard(
+fun EventDetailCardWithViewModel(
     event: Event,
-    onEdit: () -> Unit = {},
-    onDelete: () -> Unit = {},
+    onDismiss: () -> Unit = {},
+    onEditEvent: (Event) -> Unit = {},
+
 ) {
+    // Inicializar ViewModel
+    val context = LocalContext.current
+    val database = AcademicAllyDatabase.getDatabase(context)
+    val repository = EventRepository(database.eventDao())
+    val eventViewModel: EventViewModel = viewModel(
+        factory = EventViewModel.Factory(repository)
+    )
+
+    // Estado para confirmación de eliminación
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+
+    // Estado de carga
+    val isLoading by eventViewModel.isLoading.collectAsState()
+
+    // Estado de error
+    val errorMessage by eventViewModel.errorMessage.collectAsState()
+
+    // Mostrar SnackBar para errores
+    errorMessage?.let { message ->
+        LaunchedEffect(message) {
+            // Aquí puedes mostrar un SnackBar con el mensaje de error
+        }
+    }
+
     val scrollState = rememberScrollState()
-    Dialog(onDismissRequest = onEdit) {
+
+    Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -46,7 +82,6 @@ fun EventDetailCard(
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
-
                 modifier = Modifier
                     .padding(16.dp)
                     .fillMaxWidth()
@@ -105,12 +140,6 @@ fun EventDetailCard(
                     }
                 }
 
-                // Botón de notificación si existe
-                if (event.notification != null) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    NotificationButton(event.notification)
-                }
-
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Botones de acción
@@ -119,7 +148,10 @@ fun EventDetailCard(
                     horizontalArrangement = Arrangement.End
                 ) {
                     // Botón de eliminar
-                    IconButton(onClick = onDelete) {
+                    IconButton(
+                        onClick = { showDeleteConfirmation = true },
+                        enabled = !isLoading
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = "Eliminar evento",
@@ -127,9 +159,16 @@ fun EventDetailCard(
                         )
                     }
 
-                    if (event.category.equals(EventCategory.PERSONAL)) {
-                        // Botón de editar
-                        IconButton(onClick = onEdit) {
+                    // Botón de editar (solo para eventos personales)
+                    if (event.category.id == 3) { // 3 = PERSONAL
+                        IconButton(
+                            onClick = {
+                                println("DEBUG: Botón de editar presionado para evento: ${event.id}")
+                                onEditEvent(event) // Verificamos que se llama con el evento correcto
+                                onDismiss()
+                            },
+                            enabled = !isLoading
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = "Editar evento"
@@ -140,8 +179,48 @@ fun EventDetailCard(
             }
         }
     }
-}
 
+    // Diálogo de confirmación para eliminar
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text("Eliminar evento") },
+            text = { Text("¿Estás seguro que deseas eliminar este evento?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        // Eliminar el evento
+                        eventViewModel.deleteEvent(event)
+                        showDeleteConfirmation = false
+                        onDismiss()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    ),
+                    enabled = !isLoading
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onError,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Eliminar")
+                    }
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { showDeleteConfirmation = false },
+                    enabled = !isLoading
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+}
 
 /**
  * Encabezado de la tarjeta de evento con color, categoría y título
@@ -152,12 +231,18 @@ fun EventHeader(event: Event) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth()
     ) {
-        // Círculo con el color de la categoría
+        // Círculo con el color del evento
+        val colors = ScheduleColorsProvider.getColors()
         Box(
             modifier = Modifier
                 .size(24.dp)
                 .clip(CircleShape)
-                .background(event.color)
+                .background(
+                    if (colors.isNotEmpty())
+                        colors[event.colorIndex % colors.size]
+                    else
+                        Color.Gray
+                )
         )
 
         Spacer(modifier = Modifier.width(12.dp))
@@ -205,134 +290,28 @@ fun EventInfoItem(
 }
 
 /**
- * Botón de notificación para el evento
- */
-@Composable
-fun NotificationButton(notification: EventNotification) {
-    OutlinedButton(
-        onClick = { /* Implementar configuración de notificación */ },
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp)
-    ) {
-        Icon(
-            imageVector = Icons.Default.Notifications,
-            contentDescription = null,
-            modifier = Modifier.size(20.dp)
-        )
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        Text(
-            text = if (notification.isEnabled) "Avisarme 1 día antes..." else "Personalizado",
-            style = MaterialTheme.typography.bodyMedium
-        )
-    }
-}
-
-/**
  * Formatea las fechas del evento para mostrarlas en la tarjeta
  */
 @SuppressLint("NewApi")
 fun formatEventDate(startDate: LocalDate?, endDate: LocalDate?): String {
     if (startDate == null) return ""
 
-    val formatter = DateTimeFormatter.ofPattern("d 'de' MMMM")
+    val formatter = DateTimeFormatter.ofPattern("d 'de' MMMM", Locale("es", "ES"))
 
     return if (endDate != null && !startDate.isEqual(endDate)) {
-        "${startDate.dayOfMonth} - ${endDate.dayOfMonth} ${
-            startDate.month.getDisplayName(
-                java.time.format.TextStyle.FULL,
-                java.util.Locale("es", "ES")
-            )
-        }"
+        if (startDate.month != endDate.month) {
+            // Si son meses diferentes, mostrar el mes en ambas fechas
+            "${startDate.format(formatter)} - ${endDate.format(formatter)}"
+        } else {
+            // Si es el mismo mes, solo mostrar el día de inicio y fin con el mes una sola vez
+            "${startDate.dayOfMonth} - ${endDate.dayOfMonth} de ${
+                startDate.month.getDisplayName(
+                    java.time.format.TextStyle.FULL,
+                    java.util.Locale("es", "ES")
+                )
+            }"
+        }
     } else {
         startDate.format(formatter)
     }
 }
-
-@SuppressLint("NewApi")
-@Preview(showBackground = true, widthDp = 400, heightDp = 600)
-@Composable
-fun EventDetailCardPreview() {
-    Surface(color = Color(0xFFF5F5F5)) {
-        // Evento de carrera
-        val event1 = Event(
-            id = 1,
-            title = "Convocatoria Servicio Social",
-            shortDescription = "Registro para servicio",
-            longDescription = "Estimado estudiante de TICs si le interesa realizar su servicio social durante el periodo Diciembre 2024 - Junio 2025 guardar esta información Coordinación Instruccional de tutorías Desarrollo Académico.",
-            location = "Edificio 6",
-            imagePath = R.drawable.seminario.toString(),
-            startDate = LocalDate.of(2025, 11, 28),
-            endDate = LocalDate.of(2025, 11, 29),
-            category = EventCategory.CAREER,
-            color = Color(0xFF00BCD4), // Cian
-            items = listOf(
-                EventItem(1, Icons.Default.Person, "Coordinación Instruccional de tutorías"),
-                EventItem(2, Icons.Default.Call, "123456789")
-            ),
-            notification = EventNotification(
-                id = 1,
-                time = 86400000, // 1 día
-                title = "Recordatorio",
-                message = "Convocatoria Servicio Social mañana",
-                isEnabled = true
-            )
-        )
-
-        EventDetailCard(event = event1)
-    }
-}
-
-@SuppressLint("NewApi")
-@Preview(showBackground = true, widthDp = 400, heightDp = 600)
-@Composable
-fun EventDetailCardPersonalPreview() {
-    Surface(color = Color(0xFFF5F5F5)) {
-        // Evento personal
-        val event2 = Event(
-            id = 2,
-            title = "Sesión de Estudio para Examen Final",
-            shortDescription = "Preparación examen",
-            longDescription = "Tengo examen final de Programación y quiero repasar bien los temas. Voy a hacer ejercicios, revisar apuntes y usar tarjetas de memoria para recordar mejor. También quiero resolver dudas y practicar con preguntas tipo examen.",
-            location = "Biblioteca Central",
-            startDate = LocalDate.of(2025, 6, 10),
-            endDate = LocalDate.of(2025, 6, 10),
-            category = EventCategory.PERSONAL,
-            color = Color(0xFFE91E63), // Rosa
-            notification = EventNotification(
-                id = 2,
-                time = 3600000, // 1 hora
-                title = "Recordatorio",
-                message = "Sesión de estudio en 1 hora",
-                isEnabled = false
-            )
-        )
-
-        EventDetailCard(event = event2)
-    }
-}
-
-
-@SuppressLint("NewApi")
-@Preview(showBackground = true, widthDp = 400, heightDp = 600)
-@Composable
-fun EventDetailCardInstitutionalPreview() {
-    Surface(color = Color(0xFFF5F5F5)) {
-        // Evento institucional
-        val event3 = Event(
-            id = 3,
-            title = "Conferencia de Inteligencia Artificial",
-            shortDescription = "Evento académico",
-            longDescription = "",
-            startDate = LocalDate.of(2025, 4, 15),
-            endDate = LocalDate.of(2025, 4, 15),
-            category = EventCategory.INSTITUTIONAL,
-            color = Color(0xFF2196F3), // Azul
-
-        )
-
-        EventDetailCard(event = event3)
-    }
-}
-

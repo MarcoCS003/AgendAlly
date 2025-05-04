@@ -38,6 +38,7 @@ import androidx.compose.ui.window.Dialog
 import com.example.academically.R
 import com.example.academically.data.Event
 import com.example.academically.data.EventCategory
+import com.example.academically.data.EventInstitute
 import com.example.academically.data.EventItem
 import com.example.academically.data.EventNotification
 import com.example.academically.uiAcademicAlly.calendar.EventInfoItem
@@ -46,7 +47,7 @@ import java.time.LocalDate
 
 @Composable
 fun EventCardBlog(
-    event: Event,
+    event: EventInstitute,
     modifier: Modifier
 ) {
     Card(
@@ -132,7 +133,7 @@ fun EventCardBlog(
 
 @Composable
 fun EventDetailCardBlog(
-    event: Event,
+    event: EventInstitute,
     onDismiss: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
@@ -238,7 +239,7 @@ fun CardEventBlogPreview() {
         ) {
             // Ejemplo 1: Evento con imagen y ubicación
             EventDetailCardBlog(
-                event = Event(
+                event = EventInstitute(
                     id = 1,
                     title = "INNOVATECNMN 2025",
                     shortDescription = "Registro para estudiantes lider",
@@ -284,7 +285,7 @@ fun CardEventBlogPreview() {
                 )
             )
             EventCardBlog(
-                Event(
+                EventInstitute(
                     id = 2,
                     title = "Sesión de Estudio para Examen Final",
                     shortDescription = "Preparación examen",

@@ -58,26 +58,45 @@ fun MainScreen() {
         }
     }
 }
-
 @Composable
 fun NavegacionInferior(
     navController: NavHostController
 ) {
-    val menuItems = listOf(NavigationItemContent.Calendar,
-        NavigationItemContent.Schedule, NavigationItemContent.Institute, NavigationItemContent.Next
+    val menuItems = listOf(
+        NavigationItemContent.Calendar,
+        NavigationItemContent.Schedule,
+        NavigationItemContent.Institute,
+        NavigationItemContent.Next
     )
+
+    // Obtener la ruta actual
+    val currentRoute = currentRoute(navController)
 
     BottomAppBar {
         NavigationBar {
-            menuItems .forEach { item ->
+            menuItems.forEach { item ->
+                // Determinar si este elemento está seleccionado comparando la ruta
+                val selected = currentRoute == item.ruta
 
-                val selected = currentRoute(navController) == item.ruta
-                NavigationBarItem(selected = false, onClick = { navController.navigate(item.ruta) }, icon = {
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = item.text
-                    )
-                })
+                NavigationBarItem(
+                    selected = selected,  // Ahora correctamente asignado
+                    onClick = {
+                        // No navegar si ya estamos en esa pantalla
+                        if (!selected) {
+                            navController.navigate(item.ruta) {
+                                // Evitar múltiples copias de la misma pantalla en la pila
+                                popUpTo(navController.graph.startDestinationId)
+                                launchSingleTop = true
+                            }
+                        }
+                    },
+                    icon = {
+                        Icon(
+                            imageVector = item.icon,
+                            contentDescription = item.text
+                        )
+                    }
+                )
             }
         }
     }

@@ -1,12 +1,16 @@
 package com.example.academically.data
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.example.academically.ui.theme.DarkThemeScheduleColors
+import com.example.academically.ui.theme.LightThemeScheduleColors
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -61,7 +65,7 @@ data class Event(
     val shortDescription: String = "",
     val longDescription: String = "",
     val location: String = "",
-    val color: Color,
+    val colorIndex: Int, // Cambiado de color: Color
     val startDate: LocalDate? = null,
     val endDate: LocalDate? = null,
     val category: EventCategory = EventCategory.PERSONAL,
@@ -71,6 +75,16 @@ data class Event(
     val mesID: Int? = null,
     val shape: EventShape = EventShape.RoundedFull
 ) {
+    // Resto del código...
+
+    // Puedes añadir una propiedad computada para retrocompatibilidad
+    val color: Color
+        @Composable
+        get() {
+            val colors = if (isSystemInDarkTheme()) DarkThemeScheduleColors else LightThemeScheduleColors
+            return colors[colorIndex % colors.size]
+        }
+
     /**
      * Verifica si este evento ocurre en una fecha específica
      */

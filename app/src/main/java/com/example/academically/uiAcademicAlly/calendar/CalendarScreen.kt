@@ -1,6 +1,8 @@
 package com.example.academically.uiAcademicAlly.calendar
 
 import android.annotation.SuppressLint
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -30,24 +32,105 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.academically.R
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.academically.ViewModel.EventViewModel
 import com.example.academically.data.*
+import com.example.academically.data.database.AcademicAllyDatabase
+import com.example.academically.data.repository.EventRepository
 import com.example.academically.ui.theme.ScheduleColorsProvider
+
 import java.time.LocalDate
 
 enum class DaysOfWeek {
     DOMINGO, LUNES, MARTES, MIERCOLES, JUEVES, VIERNES, SABADO;
 }
 
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun CalendarScreenWithViewModel(
+    viewModel: EventViewModel = viewModel(
+        factory = EventViewModel.Factory(
+            EventRepository(
+                AcademicAllyDatabase.getDatabase(LocalContext.current).eventDao()
+            )
+        )
+    ),
+    onAddEventClick: () -> Unit = {},
+    onEditEventClick: (Event) -> Unit = {} // Parámetro para la navegación
+) {
+    // Crear dependencias para el ViewModel
+    val context = LocalContext.current
+    val database = AcademicAllyDatabase.getDatabase(context)
+    val repository = EventRepository(database.eventDao())
+    // Obtener estados del ViewModel
+    val allEvents by viewModel.allEvents.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    val currentYearMonth by viewModel.currentYearMonth.collectAsState()
+
+    // Crear proveedor de calendario
+    val calendarProvider = SystemCalendarProvider(LocalContext.current)
+
+    // Obtener datos de los meses
+    val months = calendarProvider.getMonthsData()
+
+    // Mes actual
+    val currentMonthIndex = calendarProvider.getCurrentMonthIndex()
+
+    // Procesar eventos para todos los meses
+    val allProcessedEvents = remember(allEvents) {
+        mutableMapOf<Int, Map<Int, ProcessedEvent>>().apply {
+            for (month in months) {
+                val monthEvents = EventProcessor.processEvents(
+                    month.id,
+                    currentYearMonth.year,
+                    allEvents
+                )
+                this[month.id] = monthEvents
+            }
+        }
+    }
+
+    // Mostrar mensaje de error si existe
+    errorMessage?.let { message ->
+        LaunchedEffect(message) {
+            // Aquí puedes mostrar un SnackBar u otro componente para mostrar el error
+        }
+    }
+
+    // Pantalla principal de calendario
+    Box {
+        if (isLoading) {
+            // Mostrar indicador de carga
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .size(50.dp)
+                    .align(Alignment.Center)
+            )
+        } else {
+            // Mostrar el calendario con los eventos
+            CalendarAppScreen(
+                mounts = months,
+                currentMonthIndex = currentMonthIndex,
+                processedEvents = allProcessedEvents,
+                onAddEventClick = onAddEventClick,  // Pasar la función de navegación
+                onEditEventClick = onEditEventClick
+            )
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CalendarAppScreen(
     mounts: List<MountAcademicAlly> = emptyList(),
     currentMonthIndex: Int = 0,
     processedEvents: Map<Int, Map<Int, ProcessedEvent>> = emptyMap(),
-    onAddEventClick: () -> Unit
+    onAddEventClick: () -> Unit,
+    onEditEventClick: (Event) -> Unit = {}
 ) {
     Box {
         // Estado para el scroll de LazyColumn
@@ -75,7 +158,8 @@ fun CalendarAppScreen(
 
                 CalendarCard(
                     mes = month,
-                    processedEvents = monthEvents
+                    processedEvents = monthEvents,
+                    onEditEvent = onEditEventClick
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -89,9 +173,7 @@ fun CalendarAppScreen(
 
         // Botón para añadir evento
         FloatingActionButton(
-            onClick = {
-                onAddEventClick()
-            },
+            onClick = onAddEventClick,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
@@ -102,10 +184,12 @@ fun CalendarAppScreen(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CalendarCard(
     mes: MountAcademicAlly,
-    processedEvents: Map<Int, ProcessedEvent>
+    processedEvents: Map<Int, ProcessedEvent>,
+    onEditEvent: (Event) -> Unit = {}
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -120,6 +204,7 @@ fun CalendarCard(
                 Color.White
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        onClick = { expanded = !expanded },
     ) {
         Column(
             horizontalAlignment = Alignment.Start,
@@ -127,7 +212,7 @@ fun CalendarCard(
                 .padding(8.dp)
                 .animateContentSize(
                     animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        dampingRatio = Spring.DampingRatioLowBouncy,
                         stiffness = Spring.StiffnessMedium
                     )
                 )
@@ -147,7 +232,6 @@ fun CalendarCard(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .clickable { expanded = !expanded }
                         .padding(vertical = 2.dp),
                 ) {
                     Text("Eventos", style = TextStyle(color = Color.Gray), fontSize = 12.sp)
@@ -157,7 +241,6 @@ fun CalendarCard(
                         contentDescription = if (expanded) "Colapsar" else "Expandir",
                         modifier = Modifier.size(28.dp)
                     )
-
                 }
             }
 
@@ -169,7 +252,10 @@ fun CalendarCard(
 
             // Información de eventos (solo si está expandido)
             if (expanded) {
-                EventInformation(processedEvents)
+                EventInformation(
+                    processedEvents,
+                    onEditEvent = onEditEvent
+                )
             }
         }
     }
@@ -273,7 +359,6 @@ fun DayView(
     }
 }
 
-
 @Composable
 fun DayWithEvent(
     dayNumber: String,
@@ -302,12 +387,16 @@ fun DayWithEvent(
             modifier = modifier,
             contentAlignment = Alignment.Center
         ) {
+            val colors = ScheduleColorsProvider.getColors()
             // Fondo del evento con la forma correspondiente
             Box(
                 modifier = Modifier
                     .size(36.dp)
                     .background(
-                        event.color,
+                        if (colors.isNotEmpty())
+                            colors[event.colorIndex % colors.size]
+                        else
+                            Color.Gray,
                         shape.toShape()
                     )
             )
@@ -326,14 +415,19 @@ fun DayWithEvent(
             }
 
             Text(
-                text = dayNumber
+                text = dayNumber,
+                fontWeight = FontWeight.Bold,
             )
         }
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun EventInformation(processedEvents: Map<Int, ProcessedEvent>) {
+fun EventInformation(
+    processedEvents: Map<Int, ProcessedEvent>,
+    onEditEvent: (Event) -> Unit = {}
+) {
     // Extraemos todos los eventos incluyendo los adicionales
     val allEvents = mutableListOf<Event>()
 
@@ -345,18 +439,15 @@ fun EventInformation(processedEvents: Map<Int, ProcessedEvent>) {
     // Filtramos eventos duplicados por ID
     val uniqueEvents = allEvents.distinctBy { it.id }
 
-
     // En tu composable principal:
     var selectedEvent by remember { mutableStateOf<Event?>(null) }
 
-// Mostrar el calendario...
-
-// Si hay un evento seleccionado, mostrar la tarjeta
+    // Si hay un evento seleccionado, mostrar la tarjeta
     selectedEvent?.let { event ->
-        EventDetailCard(
+        EventDetailCardWithViewModel(
             event = event,
-            onEdit = { selectedEvent = null },
-            onDelete = { /* Implementar eliminación */ },
+            onDismiss = { selectedEvent = null },
+            onEditEvent = onEditEvent
         )
     }
 
@@ -382,9 +473,6 @@ fun EventInformation(processedEvents: Map<Int, ProcessedEvent>) {
     }
 }
 
-/**
- * Botón para mostrar un evento en la lista de eventos
- */
 @Composable
 fun EventButton(
     event: Event,
@@ -407,15 +495,20 @@ fun EventButton(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
-            modifier = Modifier
-                .fillMaxWidth()
+            modifier = Modifier.fillMaxWidth()
         ) {
             val colors = ScheduleColorsProvider.getColors()
             // Indicador de color
             Box(
                 modifier = Modifier
                     .size(16.dp)
-                    .background(event.color, RoundedCornerShape(4.dp))
+                    .background(
+                        if (colors.isNotEmpty())
+                            colors[event.colorIndex % colors.size]
+                        else
+                            Color.Gray,
+                        RoundedCornerShape(4.dp)
+                    )
             )
 
             // Descripción del evento
@@ -451,183 +544,6 @@ fun EventButton(
     }
 }
 
-
-@SuppressLint("NewApi")
-@Preview(showSystemUi = true)
-@Composable
-fun CalendarPreview() {
-    // Crear eventos de muestra
-    val events = listOf(
-        // Eventos originales convertidos al nuevo formato
-        Event(
-            id = 1,
-            color = Color(0xFF80DEEA),
-            title = "Suspension de clases",
-            startDate = LocalDate.of(2025, 1, 1),
-            endDate = LocalDate.of(2025, 1, 1),
-            mesID = 1
-        ),
-        Event(
-            id = 2,
-            color = Color(0xFFFFF59D),
-            title = "Suspension de clases",
-            startDate = LocalDate.of(2025, 2, 3),
-            endDate = LocalDate.of(2025, 2, 3),
-            mesID = 1
-        ),
-        Event(
-            id = 3,
-            color = Color(0xFFFFAB91),
-            title = "Suspension de clases",
-            startDate = LocalDate.of(2025, 3, 17),
-            endDate = LocalDate.of(2025, 3, 17),
-            mesID = 1
-        ),
-        Event(
-            id = 4,
-            color = Color(0xFFC5E1A5),
-            title = "Periodo vacacional",
-            startDate = LocalDate.of(2025, 1, 1),
-            endDate = LocalDate.of(2025, 1, 8),
-            mesID = 1
-        ),
-        Event(
-            id = 5,
-            color = Color(0xFFB39DDB),
-            title = "Periodo vacacional",
-            startDate = LocalDate.of(2025, 4, 14),
-            endDate = LocalDate.of(2025, 4, 25),
-            mesID = 1
-        ),
-        Event(
-            id = 6,
-            color = Color(0xFFFFCC80),
-            title = "Inicio de clases",
-            startDate = LocalDate.of(2025, 1, 28),
-            endDate = LocalDate.of(2025, 1, 28),
-            mesID = 5,
-            shape = EventShape.Circle
-        ),
-        Event(
-            id = 7,
-            color = Color(0xFFCE93D8),
-            title = "Mi cumpleaños",
-            startDate = LocalDate.of(2025, 2, 28),
-            endDate = LocalDate.of(2025, 2, 28),
-            mesID = 2,
-            shape = EventShape.Circle
-        ),
-        // Evento que abarca varios meses
-        Event(
-            id =8 ,
-            color = Color(0xFF90CAF9),
-            title = "Suspension de clases",
-            startDate = LocalDate.of(2025, 5, 1),
-            endDate = LocalDate.of(2025, 5, 1),
-            mesID = 1
-        ),Event(
-            id = 9,
-            color = Color(0xFFF48FB1),
-            title = "Suspension de clases",
-            startDate = LocalDate.of(2025, 5, 5),
-            endDate = LocalDate.of(2025, 5, 5),
-            mesID = 1
-        ),Event(
-            id = 10,
-            color = Color(0xFF81D4FA),
-            title = "Suspension de clases",
-            startDate = LocalDate.of(2025, 5, 15),
-            endDate = LocalDate.of(2025, 5, 15),
-            mesID = 1
-        ),
-        Event(
-            id = 11,
-            color = Color(0xFFFFD54F),
-            title = "Suspension de clases",
-            startDate = LocalDate.of(2025, 5, 15),
-            endDate = LocalDate.of(2025, 5, 15),
-            mesID = 1
-        ),
-        Event(
-            id = 12,
-            color = Color(0xFF4DB6AC),
-            title = "Suspension de clases",
-            startDate = LocalDate.of(2025, 5, 15),
-            endDate = LocalDate.of(2025, 5, 15),
-            mesID = 1
-        ),
-        Event(
-            id = 13,
-            color = Color(0xFF9575CD),
-            title = "Fin de clases",
-            startDate = LocalDate.of(2025, 5, 30),
-            endDate = LocalDate.of(2025, 5, 30),
-            mesID = 1
-        ),
-        Event(
-            id = 14,
-            title = "Convocatoria Servicio Social",
-            shortDescription = "Registro para servicio",
-            longDescription = "Estimado estudiante de TICs si le interesa realizar su servicio social durante el periodo Diciembre 2024 - Junio 2025 guardar esta información Coordinación Instruccional de tutorías Desarrollo Académico.",
-            location = "Edificio 6",
-            imagePath = R.drawable.seminario.toString(),
-            startDate = LocalDate.of(2025, 11, 28),
-            endDate = LocalDate.of(2025, 11, 29),
-            category = EventCategory.CAREER,
-            color = Color(0xFFE57373), // Cian
-            items = listOf(
-                EventItem(1, Icons.Default.Person, "Coordinación Instruccional de tutorías"),
-                EventItem(2, Icons.Default.Call, "123456789")
-            ),
-            notification = EventNotification(
-                id = 1,
-                time = 86400000, // 1 día
-                title = "Recordatorio",
-                message = "Convocatoria Servicio Social mañana",
-                isEnabled = true
-            )
-        )
-    )
-
-
-
-    // Crear proveedor de calendario
-    val calendarProvider = SystemCalendarProvider(LocalContext.current)
-
-    // Obtener datos de los meses
-    val months = calendarProvider.getMonthsData()
-
-    // Mes actual
-    val currentMonthIndex = calendarProvider.getCurrentMonthIndex()
-
-    // Procesar eventos para todos los meses
-    val allProcessedEvents = mutableMapOf<Int, Map<Int, ProcessedEvent>>()
-
-    // Preparar eventos procesados para cada mes
-    for (month in months) {
-        val monthEvents = EventProcessor.processEvents(
-            month.id,
-            2025,
-            events
-        )
-        allProcessedEvents[month.id] = monthEvents
-    }
-
-    // Renderizar calendario
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        CalendarAppScreen(
-            mounts = months,
-            currentMonthIndex = currentMonthIndex,
-            processedEvents = allProcessedEvents,
-            onAddEventClick = {}
-        )
-    }
-}
-
-
 @Composable
 fun MultiEventDayView(
     dayNumber: String,
@@ -638,26 +554,40 @@ fun MultiEventDayView(
     val totalEvents = 1 + processedEvent.additionalEvents.size
     val allEvents = listOf(processedEvent.event) + processedEvent.additionalEvents
 
+    // Obtener forma del evento principal para mantener consistencia
+    val shape = processedEvent.shape
+
+    // Obtener los colores aquí, en el composable
+    val colors = ScheduleColorsProvider.getColors()
+
+    // Si no hay colores disponibles, mostrar un día normal
+    if (colors.isEmpty()) {
+        DayView(dayNumber = dayNumber, isToday = isToday)
+        return
+    }
+
     Box(
         modifier = modifier
-            .size(40.dp)
-            .clip(CircleShape),
+            .size(40.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Dibujamos el pastel de eventos
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            drawPieChart(allEvents, totalEvents)
+        // Dibujamos el pastel de eventos con los colores reales, usando la forma del evento principal
+        Canvas(modifier = Modifier
+            .size(36.dp)
+            .clip(shape.toShape())) {
+            // Usar un lambda para tener acceso al DrawScope
+            drawPieChartWithColors(allEvents, totalEvents, colors, isMultiDay = true)
         }
 
-        // Si es hoy, añadir un círculo de contorno
+        // Si es hoy, añadir un contorno que sigue la forma del evento
         if (isToday) {
             Box(
                 modifier = Modifier
-                    .size(38.dp)
+                    .size(38.dp) // Ligeramente más grande para el contorno
                     .border(
-                        width = 2.dp,
+                        width = 3.dp,
                         color = MaterialTheme.colorScheme.primary,
-                        shape = CircleShape
+                        shape = shape.toShape()
                     )
             )
         }
@@ -666,25 +596,37 @@ fun MultiEventDayView(
         Text(
             text = dayNumber,
             style = TextStyle(
-                fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
             ),
             modifier = Modifier.align(Alignment.Center)
         )
     }
 }
-/**
- * Extension function para dibujar un pastel de eventos en el Canvas
- */
-private fun DrawScope.drawPieChart(events: List<Event>, totalSlices: Int) {
+
+// Función auxiliar mejorada que maneja correctamente errores potenciales
+private fun DrawScope.drawPieChartWithColors(
+    events: List<Event>,
+    totalSlices: Int,
+    colors: List<Color>,
+    isMultiDay: Boolean = false
+) {
+    // Verificación de seguridad
+    if (events.isEmpty() || totalSlices <= 0 || colors.isEmpty()) return
 
     val sweepAngle = 360f / totalSlices
 
     events.forEachIndexed { index, event ->
-        val startAngle = index * sweepAngle+90
+        // Asegurarse de que no nos pasemos del número de sectores
+        if (index >= totalSlices) return@forEachIndexed
+
+        // Cambiar el ángulo inicial a 180 para eventos de varios días
+        val startAngle = index * sweepAngle + (if (isMultiDay) 180 else 90)
+
+        // Verificación de seguridad para colorIndex
+        val safeColorIndex = event.colorIndex.coerceIn(0, colors.size - 1)
 
         drawArc(
-            color = event.color,
+            color = colors[safeColorIndex],
             startAngle = startAngle,
             sweepAngle = sweepAngle,
             useCenter = true,

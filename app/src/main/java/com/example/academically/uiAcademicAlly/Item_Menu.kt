@@ -23,4 +23,5 @@ sealed class NavigationItemContent(
     data object AddEvent: NavigationItemContent(icon = Icons.Default.CalendarMonth,"AddEvent", "AddEvent" )
     data object AddEventSchedule: NavigationItemContent(icon = Icons.Default.Schedule,"AddEventSchedule", "AddEventSchedule")
     data object EditEventSchedule: NavigationItemContent(icon = Icons.Default.Schedule,"EditSchedule", "EditSchedule")
+    data object EditEvent : NavigationItemContent(Icons.Default.CalendarMonth, "EditEvent", "EditEvent")
 }

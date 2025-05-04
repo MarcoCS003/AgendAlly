@@ -36,6 +36,25 @@ data class Institute(
     var listCareer: List<Career> = emptyList()
 )
 
+data class EventInstitute(
+    val id: Int,
+    // Datos básicos
+    val title: String,
+    val shortDescription: String = "",
+    val longDescription: String = "",
+    val location: String = "",
+    val color: Color,
+    val startDate: LocalDate? = null,
+    val endDate: LocalDate? = null,
+    val category: EventCategory = EventCategory.PERSONAL,
+    val imagePath: String = "",
+    val items: List<EventItem> = emptyList(),
+    val notification: EventNotification? = null,
+    val mesID: Int? = null,
+    val shape: EventShape = EventShape.RoundedFull
+)
+
+
 object SampleInstituteData {
     fun getSampleInstitutes(): List<Institute> {
         return listOf(
@@ -200,9 +219,9 @@ object SampleInstituteData {
 
 object BlogDataExample{
     @RequiresApi(Build.VERSION_CODES.O)
-    fun getSampleBlog(): List<Event>{
+    fun getSampleBlog(): List<EventInstitute>{
         return listOf(
-            Event(
+            EventInstitute(
                 id = 1,
                 title = "INNOVATECNMN 2025",
                 shortDescription = "Registro para estudiantes lider",
@@ -245,7 +264,7 @@ object BlogDataExample{
                     message = "Convocatoria Servicio Social mañana",
                     isEnabled = true
                 )),
-            Event(
+            EventInstitute(
                 id = 2,
                 title = "Congreso Internacional en agua limpia y saneamiento del TECNM",
                 shortDescription = "Registro para estudiantes",
@@ -257,7 +276,7 @@ object BlogDataExample{
                 imagePath = R.drawable.congreso.toString(),
                 color = Color(0xFF2196F3)
             ),
-            Event(
+            EventInstitute(
                 id = 3,
                 title = "Concurso de Programación 2025",
                 shortDescription = "Para estudiantes de TICS",
@@ -277,7 +296,7 @@ object BlogDataExample{
                     EventItem(2, Icons.Default.AccessTime, "8:30-15:30")
                 ),
             ),
-            Event(
+            EventInstitute(
                 id = 4,
                 title = "Jornadas de TICS 2025",
                 shortDescription = "Conferencias internacionales",
@@ -288,7 +307,7 @@ object BlogDataExample{
                 category = EventCategory.CAREER,
                 color = Color(0xFF4CAF50)
             ),
-            Event(
+            EventInstitute(
                 id = 5,
                 title = "Plática de Servicio Social",
                 shortDescription = "Información importante",
