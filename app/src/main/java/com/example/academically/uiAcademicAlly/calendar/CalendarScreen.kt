@@ -142,7 +142,6 @@ fun CalendarAppScreen(
                 lazyListState.scrollToItem(currentMonthIndex)
             }
         }
-
         // LazyColumn con todos los meses
         LazyColumn(
             state = lazyListState,
@@ -604,7 +603,7 @@ fun MultiEventDayView(
 }
 
 // Función auxiliar mejorada que maneja correctamente errores potenciales
-private fun DrawScope.drawPieChartWithColors(
+fun DrawScope.drawPieChartWithColors(
     events: List<Event>,
     totalSlices: Int,
     colors: List<Color>,

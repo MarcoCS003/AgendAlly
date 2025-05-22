@@ -60,7 +60,6 @@ sealed class EventShape {
 
 data class Event(
     val id: Int,
-    // Datos básicos
     val title: String,
     val shortDescription: String = "",
     val longDescription: String = "",
@@ -85,35 +84,29 @@ data class Event(
             return colors[colorIndex % colors.size]
         }
 
-    /**
-     * Verifica si este evento ocurre en una fecha específica
-     */
+
     @SuppressLint("NewApi")
     fun occursOn(date: LocalDate): Boolean {
         return when {
-            // Evento con fechas en formato nuevo
+
             startDate != null && endDate != null ->
                 (date.isEqual(startDate) || date.isAfter(startDate)) &&
                         (date.isEqual(endDate) || date.isBefore(endDate))
-            // Compatibilidad con formato anterior (sólo mes)
             mesID != null ->
                 date.monthValue == mesID
-            // No hay coincidencia
             else -> false
         }
     }
 
-    /**
-     * Obtiene la forma adecuada para mostrar este evento en el calendario
-     */
+
     @SuppressLint("NewApi")
     fun getShapeForDate(date: LocalDate): EventShape {
-        // Para eventos de un solo día, usar la forma definida
+
         if (startDate != null && endDate != null && startDate.isEqual(endDate)) {
             return shape
         }
 
-        // Para eventos de varios días
+
         return when {
             startDate != null && endDate != null -> {
                 when {
@@ -127,9 +120,6 @@ data class Event(
         }
     }
 
-    /**
-     * Crea una versión compatible hacia atrás de este evento para un mes específico
-     */
     @SuppressLint("NewApi")
     fun getCompatibleEvent(month: Int): Event? {
         // Si el evento ya está en formato antiguo y es para este mes, devolverlo igual
@@ -156,12 +146,9 @@ data class Event(
         }
     }
 
-    /**
-     * Genera la lista de días del mes para este evento
-     */
+
     @SuppressLint("NewApi")
     fun getDaysInMonth(month: Int, year: Int): List<Int> {
-        // Si el evento no tiene fechas, retornar lista vacía
         if (startDate == null || endDate == null) {
             return emptyList()
         }
@@ -170,37 +157,32 @@ data class Event(
         val endInMonth = endDate.monthValue == month && endDate.year == year
 
         return when {
-            // Evento de un solo día en este mes
+
             startInMonth && startDate == endDate -> {
                 listOf(startDate.dayOfMonth)
             }
-            // Evento que abarca varios días solo en este mes
+
             startInMonth && endInMonth -> {
                 (startDate.dayOfMonth..endDate.dayOfMonth).toList()
             }
-            // Evento que comienza en este mes pero termina en otro
             startInMonth && !endInMonth -> {
                 val lastDay = YearMonth.of(year, month).lengthOfMonth()
                 (startDate.dayOfMonth..lastDay).toList()
             }
-            // Evento que termina en este mes pero comenzó en otro
             !startInMonth && endInMonth -> {
                 (1..endDate.dayOfMonth).toList()
             }
-            // Evento que pasa por todo el mes (comienza antes y termina después)
+
             !startInMonth && !endInMonth &&
                     isMonthBetween(month, startDate, endDate) -> {
                 val lastDay = YearMonth.of(year, month).lengthOfMonth()
                 (1..lastDay).toList()
             }
-            // No aplica a este mes
             else -> emptyList()
         }
     }
 
-    /**
-     * Verifica si un mes está entre las fechas de inicio y fin del evento
-     */
+
     @SuppressLint("NewApi")
     private fun isMonthBetween(month: Int, start: LocalDate, end: LocalDate): Boolean {
         val year = start.year

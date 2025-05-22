@@ -24,15 +24,20 @@ import com.example.academically.data.repositorty.ScheduleRepository
 import com.example.academically.uiAcademicAlly.calendar.AddEventScreenWithViewModel
 import com.example.academically.uiAcademicAlly.calendar.CalendarScreenWithViewModel
 import com.example.academically.uiAcademicAlly.calendar.EditEventScreenWithViewModel
+import com.example.academically.uiAcademicAlly.calendar.TabletCalendarScreen
 import com.example.academically.uiAcademicAlly.institute.EventBlogScreen
 import com.example.academically.uiAcademicAlly.institute.InstituteAndCareerSelectionFlow
+import com.example.academically.uiAcademicAlly.institute.TabletEventBlogScreen
 import com.example.academically.uiAcademicAlly.schedule.AddScheduleActivityScreenWithViewModel
 import com.example.academically.uiAcademicAlly.schedule.EditScheduleActivityScreen
 import com.example.academically.uiAcademicAlly.schedule.ScheduleScreenWithViewModel
+import com.example.academically.uiAcademicAlly.schedule.TabletScheduleScreen
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun NavigationHost(navController: NavHostController) {
+fun NavigationHost(
+    navController: NavHostController,
+    isTablet: Boolean = false) {
 
     val context = LocalContext.current
     val database = AcademicAllyDatabase.getDatabase(context)
@@ -40,12 +45,10 @@ fun NavigationHost(navController: NavHostController) {
     // Repositorios
     val scheduleRepository = ScheduleRepository(database.scheduleDao())
     val eventRepository = EventRepository(database.eventDao())
-
-    // ViewModels
+    // View Models
     val scheduleViewModel: ScheduleViewModel = viewModel(
         factory = ScheduleViewModelFactory(scheduleRepository)
     )
-    // Crear y usar un único EventViewModel para toda la navegación
     val eventViewModel: EventViewModel = viewModel(
         factory = EventViewModel.Factory(eventRepository)
     )
@@ -54,16 +57,20 @@ fun NavigationHost(navController: NavHostController) {
     NavHost(navController = navController, startDestination = NavigationItemContent.Calendar.ruta) {
         composable(NavigationItemContent.Calendar.ruta) {
             // Modificado para pasar la función de navegación al FAB
-            CalendarScreenWithViewModel(
-                viewModel = eventViewModel,
-                onAddEventClick = {
-                    navController.navigate(NavigationItemContent.AddEvent.ruta)
-                },
-                onEditEventClick = { event ->
-                    // Navegar a la pantalla de edición con el ID del evento
-                    navController.navigate("${NavigationItemContent.EditEvent.ruta}/${event.id}")
-                }
-            )
+            if (isTablet) {
+                TabletCalendarScreen()
+            } else {
+                CalendarScreenWithViewModel(
+                    viewModel = eventViewModel,
+                    onAddEventClick = {
+                        navController.navigate(NavigationItemContent.AddEvent.ruta)
+                    },
+                    onEditEventClick = { event ->
+                        // Navegar a la pantalla de edición con el ID del evento
+                        navController.navigate("${NavigationItemContent.EditEvent.ruta}/${event.id}")
+                    }
+                )
+            }
         }
 
         composable(NavigationItemContent.AddEvent.ruta) {
@@ -117,22 +124,33 @@ fun NavigationHost(navController: NavHostController) {
         }
 
         composable(NavigationItemContent.Institute.ruta) {
-            EventBlogScreen(
-                events = BlogDataExample.getSampleBlog()
-            )
+            if (isTablet) {
+                TabletEventBlogScreen(
+                    events = BlogDataExample.getSampleBlog(),
+                    eventViewModel = eventViewModel
+                )
+            } else {
+                EventBlogScreen(
+                    events = BlogDataExample.getSampleBlog(),
+                    eventViewModel = eventViewModel
+                )
+            }
         }
 
         composable(NavigationItemContent.Schedule.ruta) {
-            ScheduleScreenWithViewModel(
-                viewModel = scheduleViewModel,
-                onAddActivity = {
-                    navController.navigate(NavigationItemContent.AddEventSchedule.ruta)
-                },
-                onEditActivity = { schedule ->
-                    // Solo pasar el ID, no el objeto completo
-                    navController.navigate("${NavigationItemContent.EditEventSchedule.ruta}/${schedule.id}")
-                }
-            )
+            if (isTablet) {
+                TabletScheduleScreen()
+            } else {
+                ScheduleScreenWithViewModel(
+                    viewModel = scheduleViewModel,
+                    onAddActivity = {
+                        navController.navigate(NavigationItemContent.AddEventSchedule.ruta)
+                    },
+                    onEditActivity = { schedule ->
+                        navController.navigate("${NavigationItemContent.EditEventSchedule.ruta}/${schedule.id}")
+                    }
+                )
+            }
         }
 
         composable("${NavigationItemContent.EditEventSchedule.ruta}/{scheduleId}") { backStackEntry ->

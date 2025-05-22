@@ -11,19 +11,24 @@ import com.example.academically.data.EventCategory
 import com.example.academically.data.EventItem
 import com.example.academically.data.EventNotification
 import com.example.academically.data.EventShape
+import com.example.academically.data.Schedule
+import com.example.academically.data.ScheduleTime
 import com.example.academically.data.database.AcademicAllyDatabase
+import com.example.academically.data.repositorty.ScheduleRepository
 import com.example.academically.data.repository.EventRepository
+import com.example.academically.uiAcademicAlly.calendar.DaysOfWeek
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.LocalTime
 import java.util.Locale.Category
 
 class AcademicAllyApplication : Application() {
     private val database by lazy { AcademicAllyDatabase.getDatabase(this) }
     private val eventRepository by lazy { EventRepository(database.eventDao()) }
-
+    private val scheduleRepository by lazy { ScheduleRepository(database.scheduleDao()) }
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate() {
         super.onCreate()
@@ -40,12 +45,87 @@ class AcademicAllyApplication : Application() {
                 } else {
                     println("La base de datos ya contiene eventos, no se realiza precarga")
                 }
+                if(scheduleRepository.allSchedulesWithTimes.first().isEmpty()){
+                    val sampleSchedules = preloadActivities()
+                    scheduleRepository.preloadSchedules(sampleSchedules)
+                    println("Se han cargado ${sampleSchedules.size} actividades de muestra")
+                } else{
+                    println("La base de datos ya contiene actividades, no se realiza precarga")
+                }
+
+
+
             } catch (e: Exception) {
                 println("Error al verificar/cargar eventos: ${e.message}")
+
             }
+
         }
     }
-
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun preloadActivities(): List<Schedule> {
+        return listOf(
+            Schedule(
+                id = 1,
+                colorIndex = 1, // Amarillo
+                name = "ADMINISTRACIÓN GERENCIAL",
+                place = "Aula: 07A",
+                teacher = "MARIA JUANA CONTRERAS GUZMAN",
+                times = listOf(
+                    ScheduleTime(DaysOfWeek.LUNES, LocalTime.of(9, 0), LocalTime.of(11, 0)),
+                    ScheduleTime(DaysOfWeek.MIERCOLES, LocalTime.of(9, 0), LocalTime.of(11, 0)),
+                )
+            ),
+            Schedule(
+                id = 2,
+                colorIndex = 2, // Morado claro
+                name = "ADMINISTRACIÓN DE PROYECTOS",
+                place = "Aula: 07D",
+                teacher = "ANA MARIA SOSA PINTLE",
+                times = listOf(
+                    ScheduleTime(DaysOfWeek.MARTES, LocalTime.of(9, 0), LocalTime.of(11, 0)),
+                    ScheduleTime(DaysOfWeek.JUEVES, LocalTime.of(9, 0), LocalTime.of(11, 0)),
+                    ScheduleTime(DaysOfWeek.VIERNES, LocalTime.of(10, 0), LocalTime.of(11, 0))
+                )
+            ),
+            Schedule(
+                id = 3,
+                colorIndex =3, // Cian claro
+                name = "SISTEMAS WEB Y SERVICIOS ORACLE",
+                place = "Aula: 36L8",
+                teacher = "BEATRIZ PEREZ ROJAS",
+                times = listOf(
+                    ScheduleTime(DaysOfWeek.MARTES, LocalTime.of(11, 0), LocalTime.of(13, 0)),
+                    ScheduleTime(DaysOfWeek.JUEVES, LocalTime.of(11, 0), LocalTime.of(13, 0)),
+                    ScheduleTime(DaysOfWeek.VIERNES, LocalTime.of(12, 0), LocalTime.of(13, 0))
+                )
+            ),
+            Schedule(
+                id = 4,
+                colorIndex = 4, // Salmón
+                name = "CUBOS OLAP PARA INTELIGENCIA EMPRESARIAL",
+                place = "Aula: 36L3",
+                teacher = "JOSÉ OMAR RAMÍREZ MARTHA",
+                times = listOf(
+                    ScheduleTime(DaysOfWeek.LUNES, LocalTime.of(13, 0), LocalTime.of(15, 0)),
+                    ScheduleTime(DaysOfWeek.MIERCOLES, LocalTime.of(13, 0), LocalTime.of(15, 0)),
+                    ScheduleTime(DaysOfWeek.VIERNES, LocalTime.of(13, 0), LocalTime.of(14, 0))
+                )
+            ),
+            Schedule(
+                id = 5,
+                colorIndex = 5, // Verde claro
+                name = "CIBERSEGURIDAD",
+                place = "Aula: 36L8",
+                teacher = "ANDRÉS MUÑOZ FLORES",
+                times = listOf(
+                    ScheduleTime(DaysOfWeek.MARTES, LocalTime.of(15, 0), LocalTime.of(17, 0)),
+                    ScheduleTime(DaysOfWeek.JUEVES, LocalTime.of(15, 0), LocalTime.of(17, 0)),
+                    ScheduleTime(DaysOfWeek.VIERNES, LocalTime.of(16, 0), LocalTime.of(17, 0))
+                )
+            )
+        )
+    }
     // Método para obtener eventos de ejemplo
     @RequiresApi(Build.VERSION_CODES.O)
     private fun getSampleEvents(): List<Event> {
@@ -138,8 +218,8 @@ class AcademicAllyApplication : Application() {
                 id = 11,
                 colorIndex = 5,
                 title = "Inicio de clases",
-                startDate = LocalDate.of(2025, 1, 28),
-                endDate = LocalDate.of(2025, 1, 28),
+                startDate = LocalDate.of(2025, 1, 26),
+                endDate = LocalDate.of(2025, 1, 26),
                 category = EventCategory.INSTITUTIONAL,
                 shape = EventShape.Circle
             ),

@@ -43,4 +43,20 @@ class ScheduleRepository(private val scheduleDao: ScheduleDao) {
     suspend fun deleteAllSchedules() {
         scheduleDao.deleteAllSchedules()
     }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun preloadSchedules(sampleSchedules: List<Schedule>) {
+        if (true && sampleSchedules.isNotEmpty() && sampleSchedules[0] is Schedule) {
+            sampleSchedules.forEach { schedule ->
+                try {
+                    insertSchedule(schedule as Schedule)
+                } catch (e: Exception) {
+                    println("Error al insertar actividad: ${e.message}")
+                }
+            }
+        } else {
+            println("No se proporcionaron actividades válidas para precargar")
+        }
+
+    }
 }

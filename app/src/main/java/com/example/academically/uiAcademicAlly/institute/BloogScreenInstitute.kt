@@ -26,8 +26,13 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -36,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.academically.R
+import com.example.academically.ViewModel.EventViewModel
 import com.example.academically.data.Event
 import com.example.academically.data.EventCategory
 import com.example.academically.data.EventInstitute
@@ -43,6 +49,7 @@ import com.example.academically.data.EventItem
 import com.example.academically.data.EventNotification
 import com.example.academically.uiAcademicAlly.calendar.EventInfoItem
 import com.example.academically.uiAcademicAlly.calendar.formatEventDate
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 @Composable
@@ -131,12 +138,16 @@ fun EventCardBlog(
     }
 }
 
+@SuppressLint("NewApi")
 @Composable
 fun EventDetailCardBlog(
     event: EventInstitute,
-    onDismiss: () -> Unit = {}
+    onDismiss: () -> Unit = {},
+    eventViewModel: EventViewModel? = null // Nuevo parámetro
 ) {
     val scrollState = rememberScrollState()
+    var showSuccessMessage by remember { mutableStateOf(false) }
+
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
@@ -146,17 +157,17 @@ fun EventDetailCardBlog(
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
-
                 modifier = Modifier
                     .padding(16.dp)
                     .fillMaxWidth()
                     .verticalScroll(scrollState)
             ) {
+                // ... todo el contenido existente igual ...
+
                 // Encabezado con categoría y título
                 Text(text = event.title, fontSize = 20.sp, fontWeight = FontWeight.Bold)
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
-
 
                 // Imagen del Evento
                 if (event.imagePath.isNotEmpty()) {
@@ -178,6 +189,7 @@ fun EventDetailCardBlog(
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
                 }
+
                 // Información de fecha
                 EventInfoItem(
                     icon = Icons.Default.DateRange,
@@ -207,21 +219,82 @@ fun EventDetailCardBlog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                // Mensaje de éxito
+                if (showSuccessMessage) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Text(
+                            text = "✓ Evento añadido al calendario",
+                            modifier = Modifier.padding(12.dp),
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+
                 // Botones de acción
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    // Botón de ocultar
+                    // Botón de añadir al calendario
                     Button(
-                        onClick = onDismiss,
+                        onClick = {
+                            eventViewModel?.let { viewModel ->
+                                // Convertir EventInstitute a Event
+                                val calendarEvent = convertToCalendarEvent(event)
+                                viewModel.insertEvent(calendarEvent)
+                                showSuccessMessage = true
 
+                                // Ocultar mensaje después de 2 segundos
+                                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+                                    kotlinx.coroutines.delay(2000)
+                                    showSuccessMessage = false
+                                    onDismiss() // Cerrar diálogo
+                                }
+                            }
+                        },
+                        enabled = eventViewModel != null
                     ) {
                         Text("Añadir a Calendario")
                     }
                 }
             }
         }
+    }
+}
+
+// Función para convertir EventInstitute a Event
+@SuppressLint("NewApi")
+private fun convertToCalendarEvent(eventInstitute: EventInstitute): Event {
+    return Event(
+        id = 0, // Room asignará el ID
+        title = eventInstitute.title,
+        shortDescription = eventInstitute.shortDescription,
+        longDescription = eventInstitute.longDescription,
+        location = eventInstitute.location,
+        colorIndex = getColorIndex(eventInstitute.color), // Convertir color a índice
+        startDate = eventInstitute.startDate ?: LocalDate.now(),
+        endDate = eventInstitute.endDate ?: eventInstitute.startDate ?: LocalDate.now(),
+        category = eventInstitute.category,
+        shape = eventInstitute.shape
+    )
+}
+
+// Función auxiliar para convertir Color a índice
+private fun getColorIndex(color: Color): Int {
+    return when (color.toArgb()) {
+        0xFF00BCD4.toInt() -> 0 // Cian
+        0xFF2196F3.toInt() -> 1 // Azul
+        0xFF4CAF50.toInt() -> 2 // Verde
+        0xFFFFAB00.toInt() -> 3 // Naranja
+        0xFFE91E63.toInt() -> 4 // Rosa
+        else -> 0 // Por defecto
     }
 }
 

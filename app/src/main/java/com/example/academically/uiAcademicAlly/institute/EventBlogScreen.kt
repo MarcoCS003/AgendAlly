@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.ui.graphics.Color
 import com.example.academically.R
+import com.example.academically.ViewModel.EventViewModel
 import com.example.academically.data.EventInstitute
 import com.example.academically.data.EventItem
 import com.example.academically.data.EventNotification
@@ -36,7 +37,8 @@ enum class EventTab {
 @Composable
 fun EventBlogScreen(
     events: List<EventInstitute>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    eventViewModel: EventViewModel? = null // Añadir parámetro opcional
 ) {
     var selectedTab by remember { mutableStateOf(EventTab.INSTITUTE) }
     var selectedEvent by remember { mutableStateOf<EventInstitute?>(null) }
@@ -85,11 +87,11 @@ fun EventBlogScreen(
     selectedEvent?.let { event ->
         EventDetailCardBlog(
             event = event,
-            onDismiss = { selectedEvent = null }
+            onDismiss = { selectedEvent = null },
+            eventViewModel = eventViewModel // Pasar el ViewModel
         )
     }
 }
-
 @Composable
 fun EventTabRow(
     selectedTab: EventTab,
