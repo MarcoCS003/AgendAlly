@@ -88,7 +88,7 @@ fun InstituteScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(vertical = 28.dp, horizontal = 16.dp)
     ) {
         // Barra de búsqueda
         OutlinedTextField(

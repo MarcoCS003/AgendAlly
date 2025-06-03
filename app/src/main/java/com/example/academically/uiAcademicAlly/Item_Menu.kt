@@ -16,7 +16,7 @@ sealed class NavigationItemContent(
     data object Calendar: NavigationItemContent(icon = Icons.Default.CalendarMonth,"Calendar", "Calendar" )
     data object Schedule: NavigationItemContent(icon = Icons.Default.AccessTime,"Schedule", "Schedule" )
     data object Institute: NavigationItemContent(icon = Icons.Default.AccountBalance,"Institute", "Institute" )
-    data object Next: NavigationItemContent(icon = Icons.Default.Settings,"Settings", "Settings" )
+    data object Settings: NavigationItemContent(icon = Icons.Default.Settings,"Settings", "Settings" )
 
     // Navegacion fuera de la Barra de navegacion
 
@@ -24,4 +24,6 @@ sealed class NavigationItemContent(
     data object AddEventSchedule: NavigationItemContent(icon = Icons.Default.Schedule,"AddEventSchedule", "AddEventSchedule")
     data object EditEventSchedule: NavigationItemContent(icon = Icons.Default.Schedule,"EditSchedule", "EditSchedule")
     data object EditEvent : NavigationItemContent(Icons.Default.CalendarMonth, "EditEvent", "EditEvent")
+    data object AddOrganization : NavigationItemContent(Icons.Default.AccountBalance, "AddOrganization", "AddOrganization")
+    data object BlogOrganization : NavigationItemContent(Icons.Default.AccountBalance, "BlogOrganization", "BlogOrganization")
 }

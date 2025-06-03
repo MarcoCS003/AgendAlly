@@ -1,4 +1,3 @@
-
 package com.example.academically.uiAcademicAlly
 
 import android.os.Build
@@ -27,17 +26,21 @@ import com.example.academically.uiAcademicAlly.calendar.EditEventScreenWithViewM
 import com.example.academically.uiAcademicAlly.calendar.TabletCalendarScreen
 import com.example.academically.uiAcademicAlly.institute.EventBlogScreen
 import com.example.academically.uiAcademicAlly.institute.InstituteAndCareerSelectionFlow
+import com.example.academically.uiAcademicAlly.institute.InstituteScreen
+import com.example.academically.uiAcademicAlly.institute.OrganizationsScreen
 import com.example.academically.uiAcademicAlly.institute.TabletEventBlogScreen
 import com.example.academically.uiAcademicAlly.schedule.AddScheduleActivityScreenWithViewModel
 import com.example.academically.uiAcademicAlly.schedule.EditScheduleActivityScreen
 import com.example.academically.uiAcademicAlly.schedule.ScheduleScreenWithViewModel
 import com.example.academically.uiAcademicAlly.schedule.TabletScheduleScreen
+import com.example.academically.uiAcademicAlly.settings.ConfigurationScreen
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NavigationHost(
     navController: NavHostController,
-    isTablet: Boolean = false) {
+    isTablet: Boolean = false
+) {
 
     val context = LocalContext.current
     val database = AcademicAllyDatabase.getDatabase(context)
@@ -103,7 +106,23 @@ fun NavigationHost(
         }
 
         // El resto del código se mantiene igual
-        composable(NavigationItemContent.Next.ruta) {
+        composable(NavigationItemContent.Settings.ruta) {
+            ConfigurationScreen()
+        }
+
+        composable(NavigationItemContent.Institute.ruta) {
+
+            OrganizationsScreen(
+                onOrganizationClick = {
+                    navController.navigate(NavigationItemContent.BlogOrganization.ruta)
+                },
+                onAddOrganizationClick = {
+                    navController.navigate(NavigationItemContent.AddOrganization.ruta)
+                }
+            )
+        }
+
+        composable (NavigationItemContent.AddOrganization.ruta){
             val availableInstitutes = SampleInstituteData.getSampleInstitutes()
 
             // Lista mutable para institutos y carreras seleccionados
@@ -123,7 +142,8 @@ fun NavigationHost(
             )
         }
 
-        composable(NavigationItemContent.Institute.ruta) {
+        composable(NavigationItemContent.BlogOrganization.ruta){
+
             if (isTablet) {
                 TabletEventBlogScreen(
                     events = BlogDataExample.getSampleBlog(),
@@ -136,6 +156,7 @@ fun NavigationHost(
                 )
             }
         }
+
 
         composable(NavigationItemContent.Schedule.ruta) {
             if (isTablet) {

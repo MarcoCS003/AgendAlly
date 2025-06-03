@@ -150,7 +150,6 @@ fun CalendarAppScreen(
                 .padding(20.dp)
                 .fillMaxWidth()
         ) {
-            // Mostrar todos los meses
             items(mounts) { month ->
                 // Obtener eventos procesados para este mes
                 val monthEvents = processedEvents[month.id] ?: emptyMap()
