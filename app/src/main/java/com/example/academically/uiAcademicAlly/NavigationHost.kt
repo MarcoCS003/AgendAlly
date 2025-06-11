@@ -10,13 +10,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.academically.ViewModel.BlogEventsViewModel
 import com.example.academically.ViewModel.EventViewModel
+import com.example.academically.ViewModel.InstituteViewModel
 import com.example.academically.ViewModel.ScheduleViewModel
 import com.example.academically.ViewModel.ScheduleViewModelFactory
 import com.example.academically.data.BlogDataExample
 import com.example.academically.data.Career
 import com.example.academically.data.Institute
 import com.example.academically.data.SampleInstituteData
+import com.example.academically.data.api.ApiService
 import com.example.academically.data.database.AcademicAllyDatabase
 import com.example.academically.data.repository.EventRepository
 import com.example.academically.data.repositorty.ScheduleRepository
@@ -25,8 +28,8 @@ import com.example.academically.uiAcademicAlly.calendar.CalendarScreenWithViewMo
 import com.example.academically.uiAcademicAlly.calendar.EditEventScreenWithViewModel
 import com.example.academically.uiAcademicAlly.calendar.TabletCalendarScreen
 import com.example.academically.uiAcademicAlly.institute.EventBlogScreen
-import com.example.academically.uiAcademicAlly.institute.InstituteAndCareerSelectionFlow
-import com.example.academically.uiAcademicAlly.institute.InstituteScreen
+import com.example.academically.uiAcademicAlly.institute.EventBlogScreenWithAPI
+import com.example.academically.uiAcademicAlly.institute.InstituteScreenWithAPI
 import com.example.academically.uiAcademicAlly.institute.OrganizationsScreen
 import com.example.academically.uiAcademicAlly.institute.TabletEventBlogScreen
 import com.example.academically.uiAcademicAlly.schedule.AddScheduleActivityScreenWithViewModel
@@ -45,6 +48,9 @@ fun NavigationHost(
     val context = LocalContext.current
     val database = AcademicAllyDatabase.getDatabase(context)
 
+    // Servicios API
+    val apiService = remember { ApiService() }
+
     // Repositorios
     val scheduleRepository = ScheduleRepository(database.scheduleDao())
     val eventRepository = EventRepository(database.eventDao())
@@ -54,6 +60,12 @@ fun NavigationHost(
     )
     val eventViewModel: EventViewModel = viewModel(
         factory = EventViewModel.Factory(eventRepository)
+    )
+    // Institutes ViewModel
+    val instituteViewModel: InstituteViewModel = viewModel()
+    // Blog ViewModel
+    val blogEventsViewModel: BlogEventsViewModel = viewModel(
+        factory = BlogEventsViewModel.Factory(apiService)
     )
 
 
@@ -122,41 +134,42 @@ fun NavigationHost(
             )
         }
 
-        composable (NavigationItemContent.AddOrganization.ruta){
-            val availableInstitutes = SampleInstituteData.getSampleInstitutes()
-
+        composable(NavigationItemContent.AddOrganization.ruta) {
             // Lista mutable para institutos y carreras seleccionados
             val selectedInstitutesWithCareers = remember {
                 mutableStateListOf<Pair<Institute, Career>>()
             }
 
-            InstituteAndCareerSelectionFlow(
-                institutes = availableInstitutes,
+            InstituteScreenWithAPI(
+                viewModel = instituteViewModel,
                 onInstituteAndCareerSelected = { institute, career ->
                     // Agregar la pareja de instituto y carrera a la lista de seleccionados
                     val pair = institute to career
                     if (!selectedInstitutesWithCareers.contains(pair)) {
                         selectedInstitutesWithCareers.add(pair)
                     }
+
+                    // Navegar de vuelta a organizaciones
+                    navController.navigateUp()
                 }
             )
         }
 
-        composable(NavigationItemContent.BlogOrganization.ruta){
 
+        composable(NavigationItemContent.BlogOrganization.ruta) {
             if (isTablet) {
                 TabletEventBlogScreen(
                     events = BlogDataExample.getSampleBlog(),
                     eventViewModel = eventViewModel
                 )
             } else {
+                // ACTUALIZADO: Usar la versión mejorada con tu diseño original + API
                 EventBlogScreen(
-                    events = BlogDataExample.getSampleBlog(),
+                    blogEventsViewModel = blogEventsViewModel,
                     eventViewModel = eventViewModel
                 )
             }
         }
-
 
         composable(NavigationItemContent.Schedule.ruta) {
             if (isTablet) {

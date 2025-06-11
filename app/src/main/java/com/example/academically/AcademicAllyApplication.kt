@@ -291,10 +291,6 @@ class AcademicAllyApplication : Application() {
                 endDate = LocalDate.of(2025, 11, 29),
                 category = EventCategory.CAREER,
                 colorIndex = 12,
-                items = listOf(
-                    EventItem(1, Icons.Default.Person, "Coordinación Instruccional de tutorías"),
-                    EventItem(2, Icons.Default.Call, "123456789")
-                ),
                 notification = EventNotification(
                     id = 1,
                     time = 86400000, // 1 día

@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("kotlinx-serialization")
     id("kotlin-kapt")
 }
 
@@ -58,6 +59,7 @@ dependencies {
     implementation (libs.kotlinx.coroutines.core)
     // adatabilidad
     implementation("androidx.compose.material3:material3-window-size-class:1.3.2")
+    implementation (libs.material3)
     implementation (libs.androidx.window)
     implementation (libs.androidx.material3.adaptive.navigation.suite)
     implementation (libs.accompanist.adaptive)
@@ -83,7 +85,7 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-
+    implementation(libs.coil.compose)
     // NUEVAS DEPENDENCIAS para HTTP client
     implementation(libs.ktor.client.android)
     implementation(libs.ktor.client.content.negotiation)

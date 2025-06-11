@@ -2,83 +2,293 @@ package com.example.academically.uiAcademicAlly.institute
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.academically.data.Event
-import com.example.academically.data.EventCategory
-import java.time.LocalDate
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.AttachFile
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.ui.graphics.Color
-import com.example.academically.R
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.academically.ViewModel.BlogEventsViewModel
 import com.example.academically.ViewModel.EventViewModel
+import com.example.academically.data.EventCategory
 import com.example.academically.data.EventInstitute
-import com.example.academically.data.EventItem
-import com.example.academically.data.EventNotification
+import com.example.academically.data.api.EventInstituteBlog
+import com.example.academically.utils.EventItemHandler
+import kotlinx.coroutines.delay
 
 enum class EventTab {
     INSTITUTE,
     CAREER
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun EventBlogScreen(
-    events: List<EventInstitute>,
-    modifier: Modifier = Modifier,
-    eventViewModel: EventViewModel? = null // Añadir parámetro opcional
+    blogEventsViewModel: BlogEventsViewModel? = null,
+    eventViewModel: EventViewModel? = null,
+    modifier: Modifier = Modifier
 ) {
+    // Estados del ViewModel de la API
+    val apiEvents by blogEventsViewModel?.events?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(emptyList<EventInstituteBlog>()) }
+    val isLoading by blogEventsViewModel?.isLoading?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(false) }
+    val errorMessage by blogEventsViewModel?.errorMessage?.collectAsStateWithLifecycle() ?: remember { mutableStateOf<String?>(null) }
+
+    // Estados locales
     var selectedTab by remember { mutableStateOf(EventTab.INSTITUTE) }
     var selectedEvent by remember { mutableStateOf<EventInstitute?>(null) }
+    var showSearchBar by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
 
-    // Filtrar eventos según la pestaña seleccionada
-    val filteredEvents = remember(selectedTab, events) {
-        when (selectedTab) {
-            EventTab.INSTITUTE -> events.filter { it.category == EventCategory.INSTITUTIONAL }
-            EventTab.CAREER -> events.filter { it.category == EventCategory.CAREER }
+    // Convertir eventos de la API a formato local
+    val convertedEvents = remember(apiEvents) {
+        apiEvents.map { apiEvent ->
+            convertAPIToLocal(apiEvent)
         }
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        // Tabs de Instituto y Carrera
-        EventTabRow(
-            selectedTab = selectedTab,
-            onTabSelected = { selectedTab = it }
-        )
+    // Filtrar eventos según la pestaña seleccionada
+    val filteredEvents = remember(selectedTab, convertedEvents) {
+        when (selectedTab) {
+            EventTab.INSTITUTE -> convertedEvents.filter { it.category == EventCategory.INSTITUTIONAL }
+            EventTab.CAREER -> convertedEvents.filter { it.category == EventCategory.CAREER }
+        }
+    }
 
-        // Lista de eventos
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+    // Animación del FAB
+    val fabScale by animateFloatAsState(
+        targetValue = if (showSearchBar) 0f else 1f,
+        animationSpec = tween(300),
+        label = "fab_scale"
+    )
+
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            items(filteredEvents) { event ->
-                EventCardBlog(
-                    event = event,
+            // Barra de búsqueda animada
+            AnimatedVisibility(
+                visible = showSearchBar,
+                enter = slideInVertically(
+                    initialOffsetY = { -it },
+                    animationSpec = tween(300)
+                ) + fadeIn(animationSpec = tween(300)),
+                exit = slideOutVertically(
+                    targetOffsetY = { -it },
+                    animationSpec = tween(300)
+                ) + fadeOut(animationSpec = tween(300))
+            ) {
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { selectedEvent = event }
-                )
+                        .padding(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = "Buscar",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { query ->
+                                searchQuery = query
+                                if (query.length >= 2 || query.isEmpty()) {
+                                    blogEventsViewModel?.searchEvents(query)
+                                }
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 8.dp),
+                            placeholder = { Text("Buscar eventos...") },
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent
+                            )
+                        )
+
+                        IconButton(
+                            onClick = {
+                                showSearchBar = false
+                                searchQuery = ""
+                                blogEventsViewModel?.loadAllEvents()
+                            }
+                        ) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Cerrar",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
             }
 
-            // Añadir espacio al final
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
+            // Tabs de Instituto y Carrera
+            EventTabRow(
+                selectedTab = selectedTab,
+                onTabSelected = { selectedTab = it }
+            )
+
+            // Contenido principal
+            Box(modifier = Modifier.fillMaxSize()) {
+                when {
+                    isLoading && convertedEvents.isEmpty() -> {
+                        // Loading inicial
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                CircularProgressIndicator()
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text("Cargando eventos...")
+                            }
+                        }
+                    }
+
+                    errorMessage != null && convertedEvents.isEmpty() -> {
+                        // Error state
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "Error: $errorMessage",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Button(onClick = {
+                                    blogEventsViewModel?.clearError()
+                                    blogEventsViewModel?.loadAllEvents()
+                                }) {
+                                    Text("Reintentar")
+                                }
+                            }
+                        }
+                    }
+
+                    filteredEvents.isEmpty() -> {
+                        // Empty state
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No hay eventos disponibles",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    else -> {
+                        // Lista de eventos usando tu diseño original
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(filteredEvents) { event ->
+                                EventCardBlog(
+                                    event = event,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { selectedEvent = event }
+                                )
+                            }
+
+                            // Añadir espacio al final
+                            item {
+                                Spacer(modifier = Modifier.height(80.dp)) // Espacio para el FAB
+                            }
+                        }
+                    }
+                }
+
+                // Loading overlay para refresh
+                if (isLoading && convertedEvents.isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f))
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    }
+                }
+            }
+        }
+
+        // FloatingActionButton animado para búsqueda
+        AnimatedVisibility(
+            visible = !showSearchBar,
+            enter = scaleIn(animationSpec = tween(300)) + fadeIn(animationSpec = tween(300)),
+            exit = scaleOut(animationSpec = tween(300)) + fadeOut(animationSpec = tween(300)),
+            modifier = Modifier.align(Alignment.BottomEnd)
+        ) {
+            FloatingActionButton(
+                onClick = {
+                    showSearchBar = true
+                },
+                modifier = Modifier
+                    .padding(16.dp)
+                    .scale(fabScale),
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ) {
+                Icon(
+                    Icons.Default.Search,
+                    contentDescription = "Buscar eventos",
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+
+        // FAB secundario para actualizar (solo visible cuando hay búsqueda activa)
+        if (showSearchBar) {
+            FloatingActionButton(
+                onClick = {
+                    blogEventsViewModel?.refreshEvents()
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(16.dp),
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary
+            ) {
+                Icon(
+                    Icons.Default.Refresh,
+                    contentDescription = "Actualizar eventos",
+                    modifier = Modifier.size(24.dp)
+                )
             }
         }
     }
@@ -88,10 +298,19 @@ fun EventBlogScreen(
         EventDetailCardBlog(
             event = event,
             onDismiss = { selectedEvent = null },
-            eventViewModel = eventViewModel // Pasar el ViewModel
+            eventViewModel = eventViewModel
         )
     }
+
+    // Mostrar snackbar de error si hay mensaje
+    errorMessage?.let { message ->
+        LaunchedEffect(message) {
+            delay(3000)
+            blogEventsViewModel?.clearError()
+        }
+    }
 }
+
 @Composable
 fun EventTabRow(
     selectedTab: EventTab,
@@ -157,117 +376,34 @@ fun TabButton(
     }
 }
 
+// Función para convertir EventInstituteBlog a EventInstitute
 @RequiresApi(Build.VERSION_CODES.O)
-@Preview(showBackground = true)
-@Composable
-fun EventBlogScreenPreview() {
-    MaterialTheme {
-        EventBlogScreen(
-            events = listOf(
-                EventInstitute(
-                    id = 1,
-                    title = "INNOVATECNMN 2025",
-                    shortDescription = "Registro para estudiantes lider",
-                    longDescription = "Cumbre nacional de desarrollo tecnológico,\n" +
-                            "investigación e innovación INOVATECNM\u2028 \u2028Dirigida al estudiantado inscrito al periodo Enero-Junio 2025 personal docente y de investigación del Instituto Tecnológico de Puebla\n" +
-                            "\n" +
-                            "5 eventos simultáneos:\n" +
-                            "Certamen de Proyectos\n" +
-                            "HackaTec\n" +
-                            "Cortometraje de InnvAcción\n" +
-                            "Retos de Transformacionales\n" +
-                            "\n" +
-                            "Local : 23 de Mayo\n" +
-                            "Regional : Septiembre 2025\n" +
-                            "Nacional : Noviembre 2025\n" +
-                            "\n" +
-                            "Criterios de Evaluación\n" +
-                            "Memoria Tecnica \n" +
-                            "Prototipo \n" +
-                            "lo que señale el modelo de operación\n" +
-                            "del innovatecnm de 2025 de acuerdo a cada evento/categoría correspondiente  ",
-                    location = "Edificio 53",
-                    imagePath = R.drawable.inovatecnm.toString(),
-                    startDate = LocalDate.of(2025, 11, 28),
-                    endDate = LocalDate.of(2025, 11, 29),
-                    category = EventCategory.INSTITUTIONAL,
-                    color = Color(0xFF00BCD4), // Cian
-                    items = listOf(
-                        EventItem(
-                            1,
-                            Icons.Default.AttachFile,
-                            "Inovatecm.2025.pdf"
-                        ),
-                        EventItem(2, Icons.Default.Call, "123456789")
-                    ),
-                    notification = EventNotification(
-                        id = 1,
-                        time = 86400000, // 1 día
-                        title = "Recordatorio",
-                        message = "Convocatoria Servicio Social mañana",
-                        isEnabled = true
-                    )),
-                EventInstitute(
-                    id = 2,
-                    title = "Congreso Internacional en agua limpia y saneamiento del TECNM",
-                    shortDescription = "Registro para estudiantes",
-                    longDescription = "Participa en el 1er. Congreso Internacional de Agua Limpia y Saneamiento del TECNM",
-                    location = "Modalidad Híbrida",
-                    startDate = LocalDate.of(2025, 9, 25),
-                    endDate = LocalDate.of(2025, 9, 26),
-                    category = EventCategory.INSTITUTIONAL,
-                    imagePath = R.drawable.congreso.toString(),
-                    color = Color(0xFF2196F3)
-                ),
-                EventInstitute(
-                    id = 3,
-                    title = "Concurso de Programación 2025",
-                    shortDescription = "Para estudiantes de TICS",
-                    longDescription = "Invitación a los estudiantes de TICS a participar en el concurso de programación de 2025 sin costo",
-                    location = "Edificio 36",
-                    startDate = LocalDate.of(2025, 4, 28),
-                    endDate = LocalDate.of(2025, 4, 28),
-                    category = EventCategory.CAREER,
-                    imagePath = R.drawable.concurso.toString(),
-                    color = Color(0xFF4CAF50),
-                    items = listOf(
-                        EventItem(
-                            1,
-                            Icons.Default.AttachFile,
-                            "ConcursoProgramacion.2025.pdf"
-                        ),
-                        EventItem(2, Icons.Default.AccessTime, "8:30-15:30")
-                    ),
-                ),
-                EventInstitute(
-                    id = 4,
-                    title = "Jornadas de TICS 2025",
-                    shortDescription = "Conferencias internacionales",
-                    longDescription = "Participa en las jornadas de TICS del año 2025 con conferencistas internacionales, estaremos enfocados en el auge de la inteligencia artificial, ciencia de datos y las tecnologías emergentes para el desarrollo web.",
-                    location = "Edificio 53",
-                    startDate = LocalDate.of(2025, 9, 15),
-                    endDate = LocalDate.of(2025, 9, 15),
-                    category = EventCategory.CAREER,
-                    color = Color(0xFF4CAF50)
-                ),
-                EventInstitute(
-                    id = 5,
-                    title = "Plática de Servicio Social",
-                    shortDescription = "Información importante",
-                    longDescription = "Información sobre los requisitos y proceso para realizar el servicio social",
-                    startDate = LocalDate.of(2025, 5, 10),
-                    endDate = LocalDate.of(2025, 5, 10),
-                    category = EventCategory.CAREER,
-                    color = Color(0xFFFFAB00),
-                    notification = EventNotification(
-                        id = 1,
-                        time = 86400000,
-                        title = "Recordatorio",
-                        message = "Plática de servicio social mañana",
-                        isEnabled = true
-                    )
-                )
-            )
-        )
+private fun convertAPIToLocal(apiEvent: EventInstituteBlog): EventInstitute {
+    // Convertir items de la API a items locales
+    val localItems = apiEvent.items.map { apiItem ->
+        EventItemHandler.convertToLocalEventItem(apiItem)
     }
+
+    return EventInstitute(
+        id = apiEvent.id,
+        title = apiEvent.title,
+        shortDescription = apiEvent.shortDescription,
+        longDescription = apiEvent.longDescription,
+        location = apiEvent.location,
+        color = when (apiEvent.category) {
+            "INSTITUTIONAL" -> Color(0xFF2196F3) // Azul
+            "CAREER" -> Color(0xFF4CAF50) // Verde
+            else -> Color(0xFFFF9800) // Naranja
+        },
+        startDate = apiEvent.startDate?.let { java.time.LocalDate.parse(it) },
+        endDate = apiEvent.endDate?.let { java.time.LocalDate.parse(it) },
+        category = when (apiEvent.category) {
+            "INSTITUTIONAL" -> EventCategory.INSTITUTIONAL
+            "CAREER" -> EventCategory.CAREER
+            else -> EventCategory.PERSONAL
+        },
+        imagePath = apiEvent.imagePath,
+        items = localItems, // NUEVO: Items convertidos
+        instituteId = apiEvent.instituteId
+    )
 }

@@ -7,6 +7,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -261,30 +262,44 @@ fun EventHeader(event: Event) {
 /**
  * Item de información del evento (icono + texto)
  */
+
 @Composable
 fun EventInfoItem(
     icon: ImageVector,
-    text: String
+    text: String,
+    isClickable: Boolean = false,
+    onClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
 ) {
+    val itemModifier = if (isClickable && onClick != null) {
+        modifier.clickable { onClick() }
+    } else {
+        modifier
+    }
+
     Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
+        modifier = itemModifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(20.dp),
             tint = MaterialTheme.colorScheme.primary
         )
 
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold
+            color = if (isClickable) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            }
         )
     }
 }

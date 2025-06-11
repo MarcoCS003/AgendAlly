@@ -65,7 +65,9 @@ private fun EventItemEntity.toDomainModel(): EventItem {
     return EventItem(
         id = this.id,
         icon = iconVector,
-        text = this.text
+        text = this.text,
+        value = "",
+        isClickable = true
     )
 }
 

@@ -16,6 +16,9 @@ import androidx.room.PrimaryKey
         )
     ]
 )
+
+
+
 data class EventItemEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
@@ -24,7 +27,7 @@ data class EventItemEntity(
     val eventId: Int,
 
     @ColumnInfo(name = "icon_name")
-    val iconName: String, // Nombre del icono para recuperarlo después
+    val iconName: String,
 
     @ColumnInfo(name = "text")
     val text: String

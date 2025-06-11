@@ -1,6 +1,7 @@
 package com.example.academically.data
 
 import android.annotation.SuppressLint
+import android.media.Image
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -9,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.example.academically.data.api.EventItemType
 import com.example.academically.ui.theme.DarkThemeScheduleColors
 import com.example.academically.ui.theme.LightThemeScheduleColors
 import java.time.LocalDate
@@ -26,10 +28,14 @@ data class EventCategory(
     }
 }
 
+
 data class EventItem(
     val id: Int,
+    val type: EventItemType? = null,
+    val text: String,
+    val value: String,
+    val isClickable: Boolean = false,
     val icon: ImageVector,
-    val text: String
 )
 
 data class EventNotification(

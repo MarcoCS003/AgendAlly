@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.ui.graphics.Color
 import com.example.academically.R
+import com.example.academically.data.api.EventItemType
 import java.time.LocalDate
 
 data class Career(
@@ -51,9 +52,10 @@ data class EventInstitute(
     val items: List<EventItem> = emptyList(),
     val notification: EventNotification? = null,
     val mesID: Int? = null,
-    val shape: EventShape = EventShape.RoundedFull
+    val shape: EventShape = EventShape.RoundedFull,
+    // NUEVO: ID del instituto al que pertenece el evento
+    val instituteId: Int? = null
 )
-
 
 object SampleInstituteData {
     fun getSampleInstitutes(): List<Institute> {
@@ -217,9 +219,9 @@ object SampleInstituteData {
     }
 }
 
-object BlogDataExample{
+object BlogDataExample {
     @RequiresApi(Build.VERSION_CODES.O)
-    fun getSampleBlog(): List<EventInstitute>{
+    fun getSampleBlog(): List<EventInstitute> {
         return listOf(
             EventInstitute(
                 id = 1,
@@ -249,21 +251,15 @@ object BlogDataExample{
                 endDate = LocalDate.of(2025, 11, 29),
                 category = EventCategory.INSTITUTIONAL,
                 color = Color(0xFF00BCD4), // Cian
-                items = listOf(
-                    EventItem(
-                        1,
-                        Icons.Default.AttachFile,
-                        "Inovatecm.2025.pdf"
-                    ),
-                    EventItem(2, Icons.Default.Call, "123456789")
-                ),
+                instituteId = 1, // ITP
                 notification = EventNotification(
                     id = 1,
                     time = 86400000, // 1 día
                     title = "Recordatorio",
                     message = "Convocatoria Servicio Social mañana",
                     isEnabled = true
-                )),
+                )
+            ),
             EventInstitute(
                 id = 2,
                 title = "Congreso Internacional en agua limpia y saneamiento del TECNM",
@@ -274,7 +270,8 @@ object BlogDataExample{
                 endDate = LocalDate.of(2025, 9, 26),
                 category = EventCategory.INSTITUTIONAL,
                 imagePath = R.drawable.congreso.toString(),
-                color = Color(0xFF2196F3)
+                color = Color(0xFF2196F3),
+                instituteId = 1 // ITP
             ),
             EventInstitute(
                 id = 3,
@@ -287,14 +284,8 @@ object BlogDataExample{
                 category = EventCategory.CAREER,
                 imagePath = R.drawable.concurso.toString(),
                 color = Color(0xFF4CAF50),
-                items = listOf(
-                    EventItem(
-                        1,
-                        Icons.Default.AttachFile,
-                        "ConcursoProgramacion.2025.pdf"
-                    ),
-                    EventItem(2, Icons.Default.AccessTime, "8:30-15:30")
-                ),
+                instituteId = 1, // ITP ,
+
             ),
             EventInstitute(
                 id = 4,
@@ -305,7 +296,8 @@ object BlogDataExample{
                 startDate = LocalDate.of(2025, 9, 15),
                 endDate = LocalDate.of(2025, 9, 15),
                 category = EventCategory.CAREER,
-                color = Color(0xFF4CAF50)
+                color = Color(0xFF4CAF50),
+                instituteId = 1 // ITP
             ),
             EventInstitute(
                 id = 5,
@@ -316,6 +308,7 @@ object BlogDataExample{
                 endDate = LocalDate.of(2025, 5, 10),
                 category = EventCategory.CAREER,
                 color = Color(0xFFFFAB00),
+                instituteId = 1, // ITP
                 notification = EventNotification(
                     id = 1,
                     time = 86400000,
