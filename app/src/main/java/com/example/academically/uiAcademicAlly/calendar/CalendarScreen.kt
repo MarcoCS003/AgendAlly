@@ -9,7 +9,6 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,7 +37,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.academically.ViewModel.EventViewModel
 import com.example.academically.data.*
 import com.example.academically.data.database.AcademicAllyDatabase
-import com.example.academically.data.repository.EventRepository
+import com.example.academically.data.repository.PersonalEventRepository
 import com.example.academically.ui.theme.ScheduleColorsProvider
 
 import java.time.LocalDate
@@ -53,18 +52,18 @@ enum class DaysOfWeek {
 fun CalendarScreenWithViewModel(
     viewModel: EventViewModel = viewModel(
         factory = EventViewModel.Factory(
-            EventRepository(
-                AcademicAllyDatabase.getDatabase(LocalContext.current).eventDao()
+            PersonalEventRepository(
+                AcademicAllyDatabase.getDatabase(LocalContext.current).personalEventDao()
             )
         )
     ),
     onAddEventClick: () -> Unit = {},
-    onEditEventClick: (Event) -> Unit = {} // Parámetro para la navegación
+    onEditEventClick: (PersonalEvent) -> Unit = {} // Parámetro para la navegación
 ) {
     // Crear dependencias para el ViewModel
     val context = LocalContext.current
     val database = AcademicAllyDatabase.getDatabase(context)
-    val repository = EventRepository(database.eventDao())
+    val repository = PersonalEventRepository(database.personalEventDao())
     // Obtener estados del ViewModel
     val allEvents by viewModel.allEvents.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -82,9 +81,9 @@ fun CalendarScreenWithViewModel(
 
     // Procesar eventos para todos los meses
     val allProcessedEvents = remember(allEvents) {
-        mutableMapOf<Int, Map<Int, ProcessedEvent>>().apply {
+        mutableMapOf<Int, Map<Int, ProcessedPersonalEvent>>().apply {
             for (month in months) {
-                val monthEvents = EventProcessor.processEvents(
+                val monthEvents = EventProcessor.processPersonalEvents(
                     month.id,
                     currentYearMonth.year,
                     allEvents
@@ -128,9 +127,9 @@ fun CalendarScreenWithViewModel(
 fun CalendarAppScreen(
     mounts: List<MountAcademicAlly> = emptyList(),
     currentMonthIndex: Int = 0,
-    processedEvents: Map<Int, Map<Int, ProcessedEvent>> = emptyMap(),
+    processedEvents: Map<Int, Map<Int, ProcessedPersonalEvent>> = emptyMap(),
     onAddEventClick: () -> Unit,
-    onEditEventClick: (Event) -> Unit = {}
+    onEditEventClick: (PersonalEvent) -> Unit = {}
 ) {
     Box {
         // Estado para el scroll de LazyColumn
@@ -186,8 +185,8 @@ fun CalendarAppScreen(
 @Composable
 fun CalendarCard(
     mes: MountAcademicAlly,
-    processedEvents: Map<Int, ProcessedEvent>,
-    onEditEvent: (Event) -> Unit = {}
+    processedEvents: Map<Int, ProcessedPersonalEvent>,
+    onEditEvent: (PersonalEvent) -> Unit = {}
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -277,7 +276,7 @@ fun TopCalendarView() {
 @Composable
 fun CalendarArray(
     mount: MountAcademicAlly,
-    processedEvents: Map<Int, ProcessedEvent>
+    processedEvents: Map<Int, ProcessedPersonalEvent>
 ) {
     // Obtener fecha actual para destacar el día actual
     val today = LocalDate.now()
@@ -360,17 +359,17 @@ fun DayView(
 @Composable
 fun DayWithEvent(
     dayNumber: String,
-    event: Event,
+    event: PersonalEvent,
     shape: EventShape,
     modifier: Modifier = Modifier.size(40.dp),
-    additionalEvents: List<Event> = emptyList(),
+    additionalEvents: List<PersonalEvent> = emptyList(),
     isToday: Boolean = false
 ) {
     // Si hay eventos adicionales, usamos la visualización tipo pastel
     if (additionalEvents.isNotEmpty()) {
         MultiEventDayView(
             dayNumber = dayNumber,
-            processedEvent = ProcessedEvent(
+            processedEvent = ProcessedPersonalEvent(
                 day = dayNumber.toIntOrNull() ?: 0,
                 event = event,
                 shape = shape,
@@ -423,11 +422,11 @@ fun DayWithEvent(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun EventInformation(
-    processedEvents: Map<Int, ProcessedEvent>,
-    onEditEvent: (Event) -> Unit = {}
+    processedEvents: Map<Int, ProcessedPersonalEvent>,
+    onEditEvent: (PersonalEvent) -> Unit = {}
 ) {
     // Extraemos todos los eventos incluyendo los adicionales
-    val allEvents = mutableListOf<Event>()
+    val allEvents = mutableListOf<PersonalEvent>()
 
     processedEvents.values.forEach { processedEvent ->
         allEvents.add(processedEvent.event)
@@ -438,7 +437,7 @@ fun EventInformation(
     val uniqueEvents = allEvents.distinctBy { it.id }
 
     // En tu composable principal:
-    var selectedEvent by remember { mutableStateOf<Event?>(null) }
+    var selectedEvent by remember { mutableStateOf<PersonalEvent?>(null) }
 
     // Si hay un evento seleccionado, mostrar la tarjeta
     selectedEvent?.let { event ->
@@ -473,7 +472,7 @@ fun EventInformation(
 
 @Composable
 fun EventButton(
-    event: Event,
+    event: PersonalEvent,
     onClick: () -> Unit = {}
 ) {
     Button(
@@ -545,7 +544,7 @@ fun EventButton(
 @Composable
 fun MultiEventDayView(
     dayNumber: String,
-    processedEvent: ProcessedEvent,
+    processedEvent: ProcessedPersonalEvent,
     modifier: Modifier = Modifier,
     isToday: Boolean = false
 ) {
@@ -603,7 +602,7 @@ fun MultiEventDayView(
 
 // Función auxiliar mejorada que maneja correctamente errores potenciales
 fun DrawScope.drawPieChartWithColors(
-    events: List<Event>,
+    events: List<PersonalEvent>,
     totalSlices: Int,
     colors: List<Color>,
     isMultiDay: Boolean = false

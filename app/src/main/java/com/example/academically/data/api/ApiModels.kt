@@ -65,7 +65,7 @@ data class EventInstituteBlogItem(
     val title: String, // Título descriptivo
     val value: String, // Valor del item
     val isClickable: Boolean = false, // Si es clickeable
-    val iconName: String? = null // Nombre del ícono
+    val iconName: String = "" // Nombre del ícono
 )
 
 // MODELOS PARA EVENTOS DEL BLOG

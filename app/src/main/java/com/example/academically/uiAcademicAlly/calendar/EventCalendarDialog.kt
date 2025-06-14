@@ -29,9 +29,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.academically.ViewModel.EventViewModel
-import com.example.academically.data.Event
+import com.example.academically.data.PersonalEvent
+import com.example.academically.data.PersonalEventType
 import com.example.academically.data.database.AcademicAllyDatabase
-import com.example.academically.data.repository.EventRepository
+import com.example.academically.data.mappers.getIconByName
+import com.example.academically.data.repository.PersonalEventRepository
 import com.example.academically.ui.theme.ScheduleColorsProvider
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -43,15 +45,15 @@ import java.util.Locale
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun EventDetailCardWithViewModel(
-    event: Event,
+    event: PersonalEvent,
     onDismiss: () -> Unit = {},
-    onEditEvent: (Event) -> Unit = {},
+    onEditEvent: (PersonalEvent) -> Unit = {},
 
-) {
+    ) {
     // Inicializar ViewModel
     val context = LocalContext.current
     val database = AcademicAllyDatabase.getDatabase(context)
-    val repository = EventRepository(database.eventDao())
+    val repository = PersonalEventRepository(database.personalEventDao())
     val eventViewModel: EventViewModel = viewModel(
         factory = EventViewModel.Factory(repository)
     )
@@ -102,17 +104,6 @@ fun EventDetailCardWithViewModel(
                     )
                 }
 
-                // Imagen del Evento
-                if (event.imagePath.isNotEmpty()) {
-                    Image(
-                        painter = painterResource(id = event.imagePath.toInt()),
-                        contentDescription = "Imagen del evento",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp, horizontal = 8.dp)
-                    )
-                    Spacer(Modifier.padding(5.dp))
-                }
 
                 // Información de fecha
                 EventInfoItem(
@@ -134,8 +125,9 @@ fun EventDetailCardWithViewModel(
 
                     // Mostrar cada item del evento
                     event.items.forEach { item ->
+
                         EventInfoItem(
-                            icon = item.icon,
+                            icon = getIconByName(item.iconName),
                             text = item.text
                         )
                     }
@@ -161,7 +153,7 @@ fun EventDetailCardWithViewModel(
                     }
 
                     // Botón de editar (solo para eventos personales)
-                    if (event.category.id == 3) { // 3 = PERSONAL
+                    if (event.type == PersonalEventType.PERSONAL) { // 3 = PERSONAL
                         IconButton(
                             onClick = {
                                 println("DEBUG: Botón de editar presionado para evento: ${event.id}")
@@ -227,7 +219,7 @@ fun EventDetailCardWithViewModel(
  * Encabezado de la tarjeta de evento con color, categoría y título
  */
 @Composable
-fun EventHeader(event: Event) {
+fun EventHeader(event: PersonalEvent) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth()
@@ -251,7 +243,7 @@ fun EventHeader(event: Event) {
         // Categoría y título
         Column {
             Text(
-                text = "${event.category.name}: ${event.title}",
+                text = "${event.type}: ${event.title}",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
             )

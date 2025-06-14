@@ -3,31 +3,28 @@ package com.example.academically
 import android.app.Application
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Person
-import com.example.academically.data.Event
-import com.example.academically.data.EventCategory
-import com.example.academically.data.EventItem
-import com.example.academically.data.EventNotification
-import com.example.academically.data.EventShape
+import com.example.academically.data.PersonalEvent
+import com.example.academically.data.PersonalEventItem
+import com.example.academically.data.PersonalEventNotification
+import com.example.academically.data.PersonalEventType
 import com.example.academically.data.Schedule
 import com.example.academically.data.ScheduleTime
 import com.example.academically.data.database.AcademicAllyDatabase
 import com.example.academically.data.repositorty.ScheduleRepository
-import com.example.academically.data.repository.EventRepository
+import com.example.academically.data.repository.PersonalEventRepository
 import com.example.academically.uiAcademicAlly.calendar.DaysOfWeek
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
-import java.util.Locale.Category
+import java.time.format.DateTimeFormatter
 
 class AcademicAllyApplication : Application() {
     private val database by lazy { AcademicAllyDatabase.getDatabase(this) }
-    private val eventRepository by lazy { EventRepository(database.eventDao()) }
+    private val eventRepository by lazy { PersonalEventRepository(database.personalEventDao()) }
     private val scheduleRepository by lazy { ScheduleRepository(database.scheduleDao()) }
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate() {
@@ -126,180 +123,243 @@ class AcademicAllyApplication : Application() {
             )
         )
     }
-    // Método para obtener eventos de ejemplo
+
     @RequiresApi(Build.VERSION_CODES.O)
-    private fun getSampleEvents(): List<Event> {
+    private fun getSampleEvents(): List<PersonalEvent> {
+        val now = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+
         return listOf(
-            Event(
+            PersonalEvent(
                 id = 0, // El ID se generará automáticamente
                 title = "Días inhábiles",
-                colorIndex = 13, // Índice del color
+                shortDescription = "Día no laborable",
+                longDescription = "Día inhábil según el calendario académico",
+                location = "",
+                colorIndex = 13,
                 startDate = LocalDate.of(2025, 1, 1),
                 endDate = LocalDate.of(2025, 1, 1),
-                category = EventCategory.INSTITUTIONAL
-            ), Event(
-                id = 2,
-                colorIndex = 13,
+                type = PersonalEventType.SUBSCRIBED,
+                institutionalEventId = 1,
+                imagePath = "",
+                items = emptyList(),
+                notification = null,
+                isVisible = true,
+                createdAt = now,
+                updatedAt = null
+            ),
+            PersonalEvent(
+                id = 0,
                 title = "Días inhábiles",
+                shortDescription = "Día no laborable",
+                longDescription = "Día inhábil según el calendario académico",
+                location = "",
+                colorIndex = 13,
                 startDate = LocalDate.of(2025, 2, 3),
                 endDate = LocalDate.of(2025, 2, 3),
-                category = EventCategory.INSTITUTIONAL
-
+                type = PersonalEventType.SUBSCRIBED,
+                institutionalEventId = 2,
+                imagePath = "",
+                items = emptyList(),
+                notification = null,
+                isVisible = true,
+                createdAt = now,
+                updatedAt = null
             ),
-            Event(
-                id = 3,
-                colorIndex = 10,
+            PersonalEvent(
+                id = 0,
                 title = "Cumpleaños",
+                shortDescription = "Mi cumpleaños",
+                longDescription = "Celebración de cumpleaños personal",
+                location = "Casa",
+                colorIndex = 10,
                 startDate = LocalDate.of(2025, 2, 28),
                 endDate = LocalDate.of(2025, 2, 28),
-                category = EventCategory.PERSONAL
+                type = PersonalEventType.PERSONAL,
+                institutionalEventId = null,
+                imagePath = "",
+                items = listOf(
+                    PersonalEventItem(
+                        id = 1,
+                        personalEventId = 0,
+                        iconName = "celebration",
+                        text = "Fiesta",
+                        value = "18:00 hrs",
+                        isClickable = false
+                    )
+                ),
+                notification = PersonalEventNotification(
+                    id = 1,
+                    personalEventId = 0,
+                    time = 86400000, // 1 día antes
+                    title = "Recordatorio",
+                    message = "Mañana es tu cumpleaños!",
+                    isEnabled = true
+                ),
+                isVisible = true,
+                createdAt = now,
+                updatedAt = null
             ),
-            Event(
-                id = 4,
+            PersonalEvent(
+                id = 0,
+                title = "Periodo vacacional",
+                shortDescription = "Vacaciones de verano",
+                longDescription = "Periodo vacacional según calendario académico",
+                location = "Instituto",
                 colorIndex = 6,
-                title = "Periodo vacacional ",
                 startDate = LocalDate.of(2025, 7, 7),
                 endDate = LocalDate.of(2025, 7, 31),
-                category = EventCategory.INSTITUTIONAL
+                type = PersonalEventType.SUBSCRIBED,
+                institutionalEventId = 3,
+                imagePath = "",
+                items = emptyList(),
+                notification = null,
+                isVisible = true,
+                createdAt = now,
+                updatedAt = null
             ),
-
-             Event(
-                id = 5,
-                colorIndex = 5,
+            PersonalEvent(
+                id = 0,
                 title = "Actividades intersemestrales",
+                shortDescription = "Actividades entre semestres",
+                longDescription = "Periodo de actividades intersemestrales",
+                location = "Instituto",
+                colorIndex = 5,
                 startDate = LocalDate.of(2025, 6, 9),
                 endDate = LocalDate.of(2025, 7, 4),
-                category = EventCategory.INSTITUTIONAL
+                type = PersonalEventType.SUBSCRIBED,
+                institutionalEventId = 4,
+                imagePath = "",
+                items = emptyList(),
+                notification = null,
+                isVisible = true,
+                createdAt = now,
+                updatedAt = null
             ),
-            Event(
-                id = 6,
-                colorIndex = 5,
-                title = "Actividades intersemestrales",
-                startDate = LocalDate.of(2025, 1, 8),
-                endDate = LocalDate.of(2025, 1, 17),
-                category = EventCategory.INSTITUTIONAL
-            ),
-
-            Event(
-                id = 7,
-                colorIndex = 14,
+            PersonalEvent(
+                id = 0,
                 title = "Inicio de clases",
+                shortDescription = "Primer día de clases",
+                longDescription = "Inicio del periodo académico",
+                location = "Instituto Tecnológico de Puebla",
+                colorIndex = 14,
                 startDate = LocalDate.of(2025, 1, 26),
                 endDate = LocalDate.of(2025, 1, 26),
-                category = EventCategory.INSTITUTIONAL
+                type = PersonalEventType.SUBSCRIBED,
+                institutionalEventId = 5,
+                imagePath = "",
+                items = listOf(
+                    PersonalEventItem(
+                        id = 1,
+                        personalEventId = 0,
+                        iconName = "school",
+                        text = "Horario",
+                        value = "07:00 - 15:00",
+                        isClickable = false
+                    ),
+                    PersonalEventItem(
+                        id = 2,
+                        personalEventId = 0,
+                        iconName = "location",
+                        text = "Lugar",
+                        value = "Aulas asignadas",
+                        isClickable = false
+                    )
+                ),
+                notification = PersonalEventNotification(
+                    id = 2,
+                    personalEventId = 0,
+                    time = 43200000, // 12 horas antes
+                    title = "Inicio de clases",
+                    message = "Mañana inician las clases",
+                    isEnabled = true
+                ),
+                isVisible = true,
+                createdAt = now,
+                updatedAt = null
             ),
-
-            Event(
-                id = 8,
-                colorIndex = 13,
-                title = "Días inhábiles",
-                startDate = LocalDate.of(2025, 3, 17),
-                endDate = LocalDate.of(2025, 3, 17),
-                category = EventCategory.INSTITUTIONAL
-
-            ),
-            Event(
-                id = 9,
-                colorIndex = 6,
-                title = "Periodo vacacional",
-                startDate = LocalDate.of(2025, 1, 1),
-                endDate = LocalDate.of(2025, 1, 7),
-                category = EventCategory.INSTITUTIONAL
-            ),
-            Event(
-                id = 10,
-                colorIndex = 6,
-                title = "Periodo vacacional",
-                startDate = LocalDate.of(2025, 4, 14),
-                endDate = LocalDate.of(2025, 4, 25),
-                category = EventCategory.INSTITUTIONAL
-            ),
-            Event(
-                id = 11,
-                colorIndex = 5,
-                title = "Inicio de clases",
-                startDate = LocalDate.of(2025, 1, 26),
-                endDate = LocalDate.of(2025, 1, 26),
-                category = EventCategory.INSTITUTIONAL,
-                shape = EventShape.Circle
-            ),
-            // Evento que abarca varios meses
-            Event(
-                id = 12,
-                colorIndex = 13,
-                title = "Días inhábiles",
-                startDate = LocalDate.of(2025, 5, 1),
-                endDate = LocalDate.of(2025, 5, 1),
-                category = EventCategory.INSTITUTIONAL
-            ), Event(
-                id = 13,
-                colorIndex =13,
-                title = "Días inhábiles",
-                startDate = LocalDate.of(2025, 5, 5),
-                endDate = LocalDate.of(2025, 5, 5),
-                category = EventCategory.INSTITUTIONAL
-            ),
-            Event(
-                id = 14,
-                colorIndex = 13,
-                title = "Días inhábiles",
-                startDate = LocalDate.of(2025, 5, 15),
-                endDate = LocalDate.of(2025, 5, 15),
-                category = EventCategory.INSTITUTIONAL
-            ),
-            Event(
-                id = 15,
-                colorIndex = 14,
-                title = "Fin de clases",
-                startDate = LocalDate.of(2025, 5, 30),
-                endDate = LocalDate.of(2025, 5, 30),
-                category = EventCategory.INSTITUTIONAL
-            ),
-            Event(
-                id = 16,
-                colorIndex = 4,
-                title = "Incripciones",
-                startDate = LocalDate.of(2025, 1, 20),
-                endDate = LocalDate.of(2025, 1, 21),
-                category = EventCategory.INSTITUTIONAL
-            ),
-            Event(
-                id = 17,
-                colorIndex = 11,
-                title = "Reinscripciones",
-                startDate = LocalDate.of(2025, 1, 22),
-                endDate = LocalDate.of(2025, 1, 24),
-                category = EventCategory.INSTITUTIONAL
-            ),
-            Event(
-                id = 18,
-                colorIndex = 7,
-                title = "Entrega de calificaciones",
-                startDate = LocalDate.of(2025, 6, 5),
-                endDate = LocalDate.of(2025, 6, 6),
-                category = EventCategory.INSTITUTIONAL
-            ),
-
-            Event(
-                id = 19,
+            PersonalEvent(
+                id = 0,
                 title = "Convocatoria Servicio Social",
-                shortDescription = "Registro para servicio",
+                shortDescription = "Registro para servicio social",
                 longDescription = "Estimado estudiante de TICs si le interesa realizar su servicio social durante el periodo Diciembre 2024 - Junio 2025 guardar esta información Coordinación Instruccional de tutorías Desarrollo Académico.",
                 location = "Edificio 6",
-                imagePath = R.drawable.seminario.toString(),
+                colorIndex = 12,
                 startDate = LocalDate.of(2025, 11, 28),
                 endDate = LocalDate.of(2025, 11, 29),
-                category = EventCategory.CAREER,
-                colorIndex = 12,
-                notification = EventNotification(
-                    id = 1,
-                    time = 86400000, // 1 día
+                type = PersonalEventType.SUBSCRIBED,
+                institutionalEventId = 6,
+                imagePath = "", // Aquí iría R.drawable.seminario.toString() si tienes la imagen
+                items = listOf(
+                    PersonalEventItem(
+                        id = 1,
+                        personalEventId = 0,
+                        iconName = "person",
+                        text = "Coordinación",
+                        value = "Tutorías Desarrollo Académico",
+                        isClickable = false
+                    ),
+                    PersonalEventItem(
+                        id = 2,
+                        personalEventId = 0,
+                        iconName = "schedule",
+                        text = "Periodo",
+                        value = "Diciembre 2024 - Junio 2025",
+                        isClickable = false
+                    )
+                ),
+                notification = PersonalEventNotification(
+                    id = 3,
+                    personalEventId = 0,
+                    time = 86400000, // 1 día antes
                     title = "Recordatorio",
                     message = "Convocatoria Servicio Social mañana",
                     isEnabled = true
-                )
+                ),
+                isVisible = true,
+                createdAt = now,
+                updatedAt = null
+            ),
+            PersonalEvent(
+                id = 0,
+                title = "Examen Final Matemáticas",
+                shortDescription = "Examen final de matemáticas discretas",
+                longDescription = "Examen final correspondiente a la materia de matemáticas discretas",
+                location = "Aula 101",
+                colorIndex = 8,
+                startDate = LocalDate.of(2025, 6, 15),
+                endDate = LocalDate.of(2025, 6, 15),
+                type = PersonalEventType.PERSONAL,
+                institutionalEventId = null,
+                imagePath = "",
+                items = listOf(
+                    PersonalEventItem(
+                        id = 1,
+                        personalEventId = 0,
+                        iconName = "schedule",
+                        text = "Hora",
+                        value = "08:00 - 10:00",
+                        isClickable = false
+                    ),
+                    PersonalEventItem(
+                        id = 2,
+                        personalEventId = 0,
+                        iconName = "person",
+                        text = "Profesor",
+                        value = "Dr. García",
+                        isClickable = false
+                    )
+                ),
+                notification = PersonalEventNotification(
+                    id = 4,
+                    personalEventId = 0,
+                    time = 7200000, // 2 horas antes
+                    title = "Examen próximo",
+                    message = "Tu examen de matemáticas es en 2 horas",
+                    isEnabled = true
+                ),
+                isVisible = true,
+                createdAt = now,
+                updatedAt = null
             )
-            // ... más eventos
         )
-    }
-}
+    }}

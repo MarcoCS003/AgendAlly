@@ -18,18 +18,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.academically.ViewModel.BlogEventsViewModel
 import com.example.academically.ViewModel.EventViewModel
-import com.example.academically.data.EventCategory
 import com.example.academically.data.EventInstitute
+import com.example.academically.data.PersonalEventType
 import com.example.academically.data.api.EventInstituteBlog
 import com.example.academically.utils.EventItemHandler
 import kotlinx.coroutines.delay
+import java.time.LocalDate
 
 enum class EventTab {
     INSTITUTE,
@@ -64,8 +64,8 @@ fun EventBlogScreen(
     // Filtrar eventos según la pestaña seleccionada
     val filteredEvents = remember(selectedTab, convertedEvents) {
         when (selectedTab) {
-            EventTab.INSTITUTE -> convertedEvents.filter { it.category == EventCategory.INSTITUTIONAL }
-            EventTab.CAREER -> convertedEvents.filter { it.category == EventCategory.CAREER }
+            EventTab.INSTITUTE -> convertedEvents.filter { it.category == PersonalEventType.SUBSCRIBED }
+            EventTab.CAREER -> convertedEvents.filter { it.category == PersonalEventType.SUBSCRIBED }
         }
     }
 
@@ -381,7 +381,14 @@ fun TabButton(
 private fun convertAPIToLocal(apiEvent: EventInstituteBlog): EventInstitute {
     // Convertir items de la API a items locales
     val localItems = apiEvent.items.map { apiItem ->
-        EventItemHandler.convertToLocalEventItem(apiItem)
+        EventItemHandler.createPersonalEventItem(
+            apiItem.id,
+            personalEventId = apiEvent.id,
+            iconName = apiItem.iconName,
+            text = apiItem.title,
+            value = apiItem.value,
+            isClickable = true
+        )
     }
 
     return EventInstitute(
@@ -395,12 +402,12 @@ private fun convertAPIToLocal(apiEvent: EventInstituteBlog): EventInstitute {
             "CAREER" -> Color(0xFF4CAF50) // Verde
             else -> Color(0xFFFF9800) // Naranja
         },
-        startDate = apiEvent.startDate?.let { java.time.LocalDate.parse(it) },
-        endDate = apiEvent.endDate?.let { java.time.LocalDate.parse(it) },
+        startDate = apiEvent.startDate?.let { LocalDate.parse(it) },
+        endDate = apiEvent.endDate?.let { LocalDate.parse(it) },
         category = when (apiEvent.category) {
-            "INSTITUTIONAL" -> EventCategory.INSTITUTIONAL
-            "CAREER" -> EventCategory.CAREER
-            else -> EventCategory.PERSONAL
+            "INSTITUTIONAL" -> PersonalEventType.SUBSCRIBED
+            "CAREER" -> PersonalEventType.SUBSCRIBED
+            else -> PersonalEventType.SUBSCRIBED
         },
         imagePath = apiEvent.imagePath,
         items = localItems, // NUEVO: Items convertidos

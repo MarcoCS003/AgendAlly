@@ -26,4 +26,7 @@ sealed class NavigationItemContent(
     data object EditEvent : NavigationItemContent(Icons.Default.CalendarMonth, "EditEvent", "EditEvent")
     data object AddOrganization : NavigationItemContent(Icons.Default.AccountBalance, "AddOrganization", "AddOrganization")
     data object BlogOrganization : NavigationItemContent(Icons.Default.AccountBalance, "BlogOrganization", "BlogOrganization")
+    data object Login : NavigationItemContent(Icons.Default.AccountBalance, "Login", "Login")
+    data object Register : NavigationItemContent(Icons.Default.AccountBalance, "Register", "Register")
+
 }

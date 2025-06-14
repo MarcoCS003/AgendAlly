@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
@@ -36,9 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.academically.ViewModel.EventViewModel
-import com.example.academically.data.Event
 import com.example.academically.data.database.AcademicAllyDatabase
-import com.example.academically.data.repository.EventRepository
+import com.example.academically.data.repository.PersonalEventRepository
 import com.example.academically.data.*
 import com.example.academically.ui.theme.ScheduleColorsProvider
 import java.time.LocalDate
@@ -48,14 +46,14 @@ import java.time.LocalDate
 fun TabletCalendarScreen(
     viewModel: EventViewModel = viewModel(
         factory = EventViewModel.Factory(
-            EventRepository(
-                AcademicAllyDatabase.getDatabase(LocalContext.current).eventDao()
+            PersonalEventRepository(
+                AcademicAllyDatabase.getDatabase(LocalContext.current).personalEventDao()
             )
         )
     )
 ) {
     var showAddEventForm by remember { mutableStateOf(false) }
-    var editingEvent by remember { mutableStateOf<Event?>(null) }
+    var editingEvent by remember { mutableStateOf<PersonalEvent?>(null) }
 
     Row(modifier = Modifier.fillMaxSize()) {
         // Panel principal del calendario
@@ -121,7 +119,7 @@ fun TabletCalendarScreen(
 fun TabletCalendarContent(
     viewModel: EventViewModel,
     onAddEventClick: () -> Unit,
-    onEditEventClick: (Event) -> Unit
+    onEditEventClick: (PersonalEvent) -> Unit
 ) {
     val allEvents by viewModel.allEvents.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -132,9 +130,9 @@ fun TabletCalendarContent(
     val months = calendarProvider.getMonthsData()
 
     val allProcessedEvents = remember(allEvents) {
-        mutableMapOf<Int, Map<Int, ProcessedEvent>>().apply {
+        mutableMapOf<Int, Map<Int, ProcessedPersonalEvent>>().apply {
             for (month in months) {
-                val monthEvents = EventProcessor.processEvents(
+                val monthEvents = EventProcessor.processPersonalEvents(
                     month.id,
                     currentYearMonth.year,
                     allEvents
@@ -190,8 +188,8 @@ fun TabletCalendarContent(
 @Composable
 fun TabletCalendarCard(
     mes: MountAcademicAlly,
-    processedEvents: Map<Int, ProcessedEvent>,
-    onEditEvent: (Event) -> Unit = {}
+    processedEvents: Map<Int, ProcessedPersonalEvent>,
+    onEditEvent: (PersonalEvent) -> Unit = {}
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -309,7 +307,7 @@ fun TabletTopCalendarView() {
 @Composable
 fun TabletCalendarArray(
     mount: MountAcademicAlly,
-    processedEvents: Map<Int, ProcessedEvent>
+    processedEvents: Map<Int, ProcessedPersonalEvent>
 ) {
     val today = LocalDate.now()
     val currentDay = today.dayOfMonth
@@ -399,7 +397,7 @@ fun TabletDayView(
 @Composable
 fun TabletDayWithEvent(
     dayNumber: String,
-    event: Event,
+    event: PersonalEvent,
     shape: EventShape,
     isToday: Boolean = false
 ) {
@@ -448,7 +446,7 @@ fun TabletDayWithEvent(
 @Composable
 fun TabletMultiEventDayView(
     dayNumber: String,
-    processedEvent: ProcessedEvent,
+    processedEvent: ProcessedPersonalEvent,
     isToday: Boolean = false
 ) {
     val totalEvents = 1 + processedEvent.additionalEvents.size

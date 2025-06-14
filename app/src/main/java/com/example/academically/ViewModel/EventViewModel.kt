@@ -6,8 +6,8 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.academically.data.Event
-import com.example.academically.data.repository.EventRepository
+import com.example.academically.data.PersonalEvent
+import com.example.academically.data.repository.PersonalEventRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,19 +17,19 @@ import java.time.LocalDate
 import java.time.YearMonth
 
 @RequiresApi(VERSION_CODES.O)
-class EventViewModel(private val eventRepository: EventRepository) : ViewModel() {
+class EventViewModel(private val eventRepository: PersonalEventRepository) : ViewModel() {
 
     // Estado para todos los eventos
-    private val _allEvents = MutableStateFlow<List<Event>>(emptyList())
-    val allEvents: StateFlow<List<Event>> = _allEvents.asStateFlow()
+    private val _allEvents = MutableStateFlow<List<PersonalEvent>>(emptyList())
+    val allEvents: StateFlow<List<PersonalEvent>> = _allEvents.asStateFlow()
 
     // Estado para un evento específico
-    private val _selectedEvent = MutableStateFlow<Event?>(null)
-    val selectedEvent: StateFlow<Event?> = _selectedEvent.asStateFlow()
+    private val _selectedEvent = MutableStateFlow<PersonalEvent?>(null)
+    val selectedEvent: StateFlow<PersonalEvent?> = _selectedEvent.asStateFlow()
 
     // Estado para eventos filtrados por fecha
-    private val _filteredEvents = MutableStateFlow<List<Event>>(emptyList())
-    val filteredEvents: StateFlow<List<Event>> = _filteredEvents.asStateFlow()
+    private val _filteredEvents = MutableStateFlow<List<PersonalEvent>>(emptyList())
+    val filteredEvents: StateFlow<List<PersonalEvent>> = _filteredEvents.asStateFlow()
 
     // Estado para el mes y año actual
     private val _currentYearMonth = MutableStateFlow(YearMonth.now())
@@ -126,7 +126,7 @@ class EventViewModel(private val eventRepository: EventRepository) : ViewModel()
 
     // Insertar un nuevo evento
     @RequiresApi(VERSION_CODES.O)
-    fun insertEvent(event: Event) {
+    fun insertEvent(event: PersonalEvent) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -143,7 +143,7 @@ class EventViewModel(private val eventRepository: EventRepository) : ViewModel()
 
     // Actualizar un evento existente
     @RequiresApi(VERSION_CODES.O)
-    fun updateEvent(event: Event) {
+    fun updateEvent(event: PersonalEvent) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -159,7 +159,7 @@ class EventViewModel(private val eventRepository: EventRepository) : ViewModel()
     }
 
     // Eliminar un evento
-    fun deleteEvent(event: Event) {
+    fun deleteEvent(event: PersonalEvent) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -180,7 +180,7 @@ class EventViewModel(private val eventRepository: EventRepository) : ViewModel()
     }
 
     // Factory para crear instancias del ViewModel
-    class Factory(private val eventRepository: EventRepository) : ViewModelProvider.Factory {
+    class Factory(private val eventRepository: PersonalEventRepository) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(EventViewModel::class.java)) {

@@ -18,7 +18,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun ConfigurationScreen() {
+fun ConfigurationScreen(
+    OnClicKRes: () -> Unit
+) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -50,7 +52,8 @@ fun ConfigurationScreen() {
                     ConfigItem("Perfil", Icons.Default.Person),
                     ConfigItem("Notificaciones", Icons.Default.Notifications),
                     ConfigItem("Organizaciones", Icons.Default.Business)
-                )
+                ),
+                onClicKRes = OnClicKRes
             )
         }
         /* Se integrara en fituras vesiones
@@ -97,7 +100,8 @@ fun ConfigurationScreen() {
 @Composable
 fun ConfigurationSection(
     title: String,
-    items: List<ConfigItem>
+    items: List<ConfigItem>,
+    onClicKRes: () -> Unit
 ) {
     Column {
         Text(
@@ -120,10 +124,7 @@ fun ConfigurationSection(
                     ConfigurationButton(
                         text = item.title,
                         icon = item.icon,
-                        onClick = {
-                            // TODO: Implementar navegación específica para cada botón
-                            println("Clicked on ${item.title}")
-                        }
+                        onClick = onClicKRes
                     )
 
                     // Agregar divider entre items (excepto el último)
@@ -201,6 +202,8 @@ data class ConfigItem(
 @Composable
 fun ConfigurationScreenPreview() {
     MaterialTheme {
-        ConfigurationScreen()
+        ConfigurationScreen(
+            OnClicKRes = TODO()
+        )
     }
 }

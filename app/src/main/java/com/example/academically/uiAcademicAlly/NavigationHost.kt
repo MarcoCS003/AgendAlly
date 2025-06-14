@@ -10,6 +10,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.academically.ui.screens.auth.RegisterScreen
 import com.example.academically.ViewModel.BlogEventsViewModel
 import com.example.academically.ViewModel.EventViewModel
 import com.example.academically.ViewModel.InstituteViewModel
@@ -18,17 +19,15 @@ import com.example.academically.ViewModel.ScheduleViewModelFactory
 import com.example.academically.data.BlogDataExample
 import com.example.academically.data.Career
 import com.example.academically.data.Institute
-import com.example.academically.data.SampleInstituteData
 import com.example.academically.data.api.ApiService
 import com.example.academically.data.database.AcademicAllyDatabase
-import com.example.academically.data.repository.EventRepository
+import com.example.academically.data.repository.PersonalEventRepository
 import com.example.academically.data.repositorty.ScheduleRepository
 import com.example.academically.uiAcademicAlly.calendar.AddEventScreenWithViewModel
 import com.example.academically.uiAcademicAlly.calendar.CalendarScreenWithViewModel
 import com.example.academically.uiAcademicAlly.calendar.EditEventScreenWithViewModel
 import com.example.academically.uiAcademicAlly.calendar.TabletCalendarScreen
 import com.example.academically.uiAcademicAlly.institute.EventBlogScreen
-import com.example.academically.uiAcademicAlly.institute.EventBlogScreenWithAPI
 import com.example.academically.uiAcademicAlly.institute.InstituteScreenWithAPI
 import com.example.academically.uiAcademicAlly.institute.OrganizationsScreen
 import com.example.academically.uiAcademicAlly.institute.TabletEventBlogScreen
@@ -37,6 +36,7 @@ import com.example.academically.uiAcademicAlly.schedule.EditScheduleActivityScre
 import com.example.academically.uiAcademicAlly.schedule.ScheduleScreenWithViewModel
 import com.example.academically.uiAcademicAlly.schedule.TabletScheduleScreen
 import com.example.academically.uiAcademicAlly.settings.ConfigurationScreen
+import com.example.academically.uiAcademicAlly.settings.LoginScreen
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -53,7 +53,7 @@ fun NavigationHost(
 
     // Repositorios
     val scheduleRepository = ScheduleRepository(database.scheduleDao())
-    val eventRepository = EventRepository(database.eventDao())
+    val eventRepository = PersonalEventRepository(database.personalEventDao())
     // View Models
     val scheduleViewModel: ScheduleViewModel = viewModel(
         factory = ScheduleViewModelFactory(scheduleRepository)
@@ -119,7 +119,9 @@ fun NavigationHost(
 
         // El resto del código se mantiene igual
         composable(NavigationItemContent.Settings.ruta) {
-            ConfigurationScreen()
+            ConfigurationScreen(
+                OnClicKRes = {navController.navigate(NavigationItemContent.Login.ruta)}
+            )
         }
 
         composable(NavigationItemContent.Institute.ruta) {
@@ -205,6 +207,14 @@ fun NavigationHost(
                 viewModel = scheduleViewModel,
                 onNavigateBack = { navController.navigateUp() }
             )
+        }
+
+        composable(NavigationItemContent.Login.ruta) {
+            LoginScreen( onNavigateToRegister = { navController.navigate(NavigationItemContent.Register.ruta) })
+        }
+
+        composable(NavigationItemContent.Register.ruta) {
+            RegisterScreen()
         }
     }
 }

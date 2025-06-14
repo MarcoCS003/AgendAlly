@@ -3,8 +3,8 @@ package com.example.academically.data.entities
 import androidx.room.Embedded
 import androidx.room.Relation
 
-data class EventWithDetails(
-    @Embedded val event: EventEntity,
+data class PersonalEventWithDetails(
+    @Embedded val event: PersonalEventEntity,
 
     @Relation(
         parentColumn = "id",
@@ -16,5 +16,5 @@ data class EventWithDetails(
         parentColumn = "id",
         entityColumn = "event_id"
     )
-    val notification: EventNotificationEntity? = null
+    val notification: PersonalEventNotificationEntity? = null
 )

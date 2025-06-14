@@ -1,6 +1,8 @@
 package com.example.academically.uiAcademicAlly.institute
 
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,9 +14,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.academically.ViewModel.EventViewModel
-import com.example.academically.data.EventCategory
 import com.example.academically.data.EventInstitute
+import com.example.academically.data.PersonalEventType
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TabletEventBlogScreen(
     events: List<EventInstitute>,
@@ -27,8 +30,8 @@ fun TabletEventBlogScreen(
     // Filtrar eventos según la pestaña seleccionada
     val filteredEvents = remember(selectedTab, events) {
         when (selectedTab) {
-            EventTab.INSTITUTE -> events.filter { it.category == EventCategory.INSTITUTIONAL }
-            EventTab.CAREER -> events.filter { it.category == EventCategory.CAREER }
+            EventTab.INSTITUTE -> events.filter { it.category == PersonalEventType.SUBSCRIBED } // CAMBIADO: category -> type
+            EventTab.CAREER -> events.filter { it.category == PersonalEventType.SUBSCRIBED }
         }
     }
 

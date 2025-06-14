@@ -7,11 +7,8 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.Month
 import java.time.YearMonth
-
 import java.time.format.TextStyle
 import java.util.Locale
-
-
 
 data class MountAcademicAlly(
     val id: Int,
@@ -33,7 +30,6 @@ class SystemCalendarProvider(private val context: Context) {
     /**
      * Obtiene el mes actual (1-12)
      */
-
     fun getCurrentMonth(): Int {
         return LocalDate.now().monthValue
     }
@@ -48,7 +44,6 @@ class SystemCalendarProvider(private val context: Context) {
     /**
      * Genera los datos de todos los meses del año
      */
-    @SuppressLint("NewApi")
     fun getMonthsData(year: Int = getCurrentYear()): List<MountAcademicAlly> {
         val months = mutableListOf<MountAcademicAlly>()
 
@@ -96,8 +91,6 @@ class SystemCalendarProvider(private val context: Context) {
         val lastDayOfMonth = yearMonth.atEndOfMonth()
 
         // Ajuste para que la semana empiece en domingo (0)
-        // El valor numérico de dayOfWeek en Java time es: 1 = lunes, ..., 7 = domingo
-        // Convertimos para que sea: 0 = domingo, 1 = lunes, ..., 6 = sábado
         val firstDayOffset = (firstDayOfMonth.dayOfWeek.value % 7)
 
         val weeks = mutableListOf<List<Int>>()
@@ -127,7 +120,6 @@ class SystemCalendarProvider(private val context: Context) {
                 if (day <= lastDayOfMonth.dayOfMonth) {
                     currentWeek[i] = day++
                 } else {
-                    // Rellenar con 0 el resto de la semana
                     currentWeek[i] = 0
                 }
             }
@@ -136,54 +128,151 @@ class SystemCalendarProvider(private val context: Context) {
 
         return weeks
     }
+
+    /**
+     * Obtiene información específica de un mes
+     */
+    fun getMonthData(year: Int, month: Int): MountAcademicAlly? {
+        return try {
+            val monthsData = getMonthsData(year)
+            monthsData.find { it.id == month }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Verifica si una fecha está en el mes actual
+     */
+    fun isCurrentMonth(year: Int, month: Int): Boolean {
+        val now = LocalDate.now()
+        return now.year == year && now.monthValue == month
+    }
+
+    /**
+     * Verifica si un día es el día actual
+     */
+    fun isToday(year: Int, month: Int, day: Int): Boolean {
+        val now = LocalDate.now()
+        return now.year == year && now.monthValue == month && now.dayOfMonth == day
+    }
+
+    /**
+     * Obtiene el nombre del mes en español
+     */
+    fun getMonthName(month: Int): String {
+        return Month.of(month).getDisplayName(TextStyle.FULL, Locale("es", "ES"))
+            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+    }
+
+    /**
+     * Obtiene el nombre del día de la semana en español
+     */
+    fun getDayName(dayOfWeek: DayOfWeek): String {
+        return dayOfWeek.getDisplayName(TextStyle.FULL, Locale("es", "ES"))
+            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+    }
 }
 
-class EventConverter {
+// ========== UTILIDADES PARA EVENTOS PERSONALES ==========
+class PersonalEventCalendarProcessor {
     companion object {
         /**
-         * Convierte eventos del formato antiguo al nuevo formato
+         * Procesa eventos personales para mostrar en el calendario
          */
         @SuppressLint("NewApi")
-        fun convertToNewFormat(events: List<Event>, year: Int = LocalDate.now().year): List<Event> {
-            val newEvents = mutableListOf<Event>()
+        fun processEventsForCalendar(
+            month: Int,
+            year: Int,
+            events: List<PersonalEvent>
+        ): Map<Int, ProcessedPersonalEvent> {
+            return EventProcessor.processPersonalEvents(month, year, events)
+        }
 
-            events.forEach { event ->
-                // Si ya está en el nuevo formato, no convertir
-                if (event.startDate != null && event.endDate != null) {
-                    newEvents.add(event)
-                    return@forEach
+        /**
+         * Obtiene eventos para una fecha específica
+         */
+        @SuppressLint("NewApi")
+        fun getEventsForDate(
+            date: LocalDate,
+            events: List<PersonalEvent>
+        ): List<PersonalEvent> {
+            return EventProcessor.getEventsForDate(date, events)
+        }
+
+        /**
+         * Filtra eventos por tipo para el calendario
+         */
+        fun filterEventsByTypeForCalendar(
+            events: List<PersonalEvent>,
+            showPersonal: Boolean = true,
+            showSubscribed: Boolean = true,
+            showHidden: Boolean = false
+        ): List<PersonalEvent> {
+            return events.filter { event ->
+                when (event.type) {
+                    PersonalEventType.PERSONAL -> showPersonal
+                    PersonalEventType.SUBSCRIBED -> showSubscribed
+                    PersonalEventType.HIDDEN -> showHidden
+                    PersonalEventType.ACADEMIC -> TODO()
                 }
+            }
+        }
 
-                // Si tiene mesID pero no tiene startDate/endDate, crear fechas
-                if (event.mesID != null) {
-                    val month = event.mesID
-                    val days = event.getDaysInMonth(month, year)
+        /**
+         * Cuenta eventos por día en un mes
+         */
+        @SuppressLint("NewApi")
+        fun getEventCountPerDay(
+            month: Int,
+            year: Int,
+            events: List<PersonalEvent>
+        ): Map<Int, Int> {
+            val yearMonth = YearMonth.of(year, month)
+            val eventCounts = mutableMapOf<Int, Int>()
 
-                    if (days.isNotEmpty()) {
-                        newEvents.add(Event(
-                            id = event.id,
-                            startDate = LocalDate.of(year, month, days.first()),
-                            endDate = LocalDate.of(year, month, days.last()),
-                            title = event.title,
-                            colorIndex = event.colorIndex,
-                            shape = event.shape
-                        ))
-                    } else {
-                        // Si no hay días específicos, hacemos que el evento dure todo el mes
-                        val lastDayOfMonth = YearMonth.of(year, month).lengthOfMonth()
-                        newEvents.add(Event(
-                            id = event.id,
-                            startDate = LocalDate.of(year, month, 1),
-                            endDate = LocalDate.of(year, month, lastDayOfMonth),
-                            title = event.title,
-                            colorIndex = event.colorIndex,
-                            shape = event.shape
-                        ))
-                    }
+            for (day in 1..yearMonth.lengthOfMonth()) {
+                val date = LocalDate.of(year, month, day)
+                val eventsForDay = events.count { event ->
+                    event.occursOn(date) && event.isVisible
+                }
+                if (eventsForDay > 0) {
+                    eventCounts[day] = eventsForDay
                 }
             }
 
-            return newEvents
+            return eventCounts
+        }
+
+        /**
+         * Obtiene el color predominante de eventos en un día
+         */
+        @SuppressLint("NewApi")
+        fun getDominantColorForDay(
+            date: LocalDate,
+            events: List<PersonalEvent>
+        ): Int? {
+            val eventsForDay = events.filter { event ->
+                event.occursOn(date) && event.isVisible
+            }
+
+            return if (eventsForDay.isNotEmpty()) {
+                // Priorizar eventos institucionales, luego por orden de creación
+                val prioritizedEvent = eventsForDay.sortedWith(
+                    compareBy<PersonalEvent> { event ->
+                        when (event.type) {
+                            PersonalEventType.SUBSCRIBED -> 0
+                            PersonalEventType.PERSONAL -> 1
+                            PersonalEventType.HIDDEN -> 2
+                            PersonalEventType.ACADEMIC -> TODO()
+                        }
+                    }.thenBy { it.startDate }
+                ).first()
+
+                prioritizedEvent.colorIndex
+            } else {
+                null
+            }
         }
     }
 }

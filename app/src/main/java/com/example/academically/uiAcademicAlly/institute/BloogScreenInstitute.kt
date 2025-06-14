@@ -4,8 +4,9 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.util.Log
-import androidx.compose.foundation.Image
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -26,7 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.ImageNotSupported // NUEVO: Para mostrar cuando no hay imagen
+import androidx.compose.material.icons.filled.ImageNotSupported
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -46,28 +47,30 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import com.example.academically.R
 import com.example.academically.ViewModel.EventViewModel
-import com.example.academically.data.Event
-import com.example.academically.data.EventCategory
 import com.example.academically.data.EventInstitute
-import com.example.academically.data.EventItem
-import com.example.academically.data.EventNotification
-import com.example.academically.data.api.EventItemType
+import com.example.academically.data.PersonalEvent
+import com.example.academically.data.PersonalEventType
+import com.example.academically.data.PersonalEventItem
+import com.example.academically.data.PersonalEventNotification
+import com.example.academically.data.mappers.getIconByName
 import com.example.academically.uiAcademicAlly.calendar.EventInfoItem
 import com.example.academically.uiAcademicAlly.calendar.formatEventDate
-import io.ktor.client.plugins.logging.Logger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 // ===== FUNCIÓN AUXILIAR PARA MANEJAR IMÁGENES =====
 @Composable
@@ -82,10 +85,8 @@ private fun EventImage(
             // No renderizar nada
         }
         imagePath.startsWith("http") -> {
-
             SubcomposeAsyncImage(
                 model = imagePath,
-
                 contentDescription = "Imagen del evento",
                 modifier = modifier,
                 loading = {
@@ -111,8 +112,6 @@ private fun EventImage(
                 }
             )
         }
-
-
         // Si imagePath es otra cosa (path relativo), construir URL completa
         else -> {
             val fullUrl = if (imagePath.startsWith("/")) {
@@ -229,7 +228,8 @@ fun EventCardBlog(
         }
     }
 }
-@SuppressLint("NewApi")
+
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun EventDetailCardBlog(
     event: EventInstitute,
@@ -266,8 +266,7 @@ fun EventDetailCardBlog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(200.dp)
-                            .padding(vertical = 4.dp
-                            )
+                            .padding(vertical = 4.dp)
                     )
                     Spacer(Modifier.padding(5.dp))
                 }
@@ -311,11 +310,11 @@ fun EventDetailCardBlog(
                     // Mostrar cada item del evento
                     event.items.forEach { item ->
                         EventInfoItemClickable(
-                            icon = item.icon,
+                            icon = getIconByName(item.iconName ?: "info"),
                             text = "${item.text}: ${item.value}",
                             isClickable = item.isClickable,
                             onClick = if (item.isClickable) {
-                                { handleItemClick(context, item) }
+                                { handlePersonalEventItemClick(context, item) }
                             } else null
                         )
                     }
@@ -349,12 +348,12 @@ fun EventDetailCardBlog(
                     Button(
                         onClick = {
                             eventViewModel?.let { viewModel ->
-                                val calendarEvent = convertToCalendarEvent(event)
-                                viewModel.insertEvent(calendarEvent)
+                                val personalEvent = convertToPersonalEvent(event)
+                                viewModel.insertEvent(personalEvent) // CORREGIDO: Usar insertPersonalEvent
                                 showSuccessMessage = true
 
-                                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
-                                    kotlinx.coroutines.delay(2000)
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    delay(2000)
                                     showSuccessMessage = false
                                     onDismiss()
                                 }
@@ -368,6 +367,43 @@ fun EventDetailCardBlog(
             }
         }
     }
+}
+
+
+@RequiresApi(Build.VERSION_CODES.O)
+private fun convertToPersonalEvent(eventInstitute: EventInstitute): PersonalEvent {
+    val now = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+
+
+    val personalEventItems = eventInstitute.items.map { item ->
+        PersonalEventItem(
+            id = 0,
+            personalEventId = 0, // Se asignará al guardar el evento
+            iconName = item.iconName ?: "info",
+            text = item.text,
+            value = item.value,
+            isClickable = item.isClickable
+        )
+    }
+
+    return PersonalEvent(
+        0,
+        eventInstitute.title,
+        eventInstitute.shortDescription,
+        eventInstitute.longDescription,
+        eventInstitute.location,
+        getColorIndex(eventInstitute.color),
+        eventInstitute.startDate ?: LocalDate.now(),
+        eventInstitute.endDate ?: eventInstitute.startDate ?: LocalDate.now(),
+        PersonalEventType.SUBSCRIBED,
+        eventInstitute.id,
+        eventInstitute.imagePath,
+        personalEventItems,
+        eventInstitute.notification,
+        true,
+        now,
+        null
+    )
 }
 
 // ===== COMPONENTE MEJORADO PARA ITEMS CLICKEABLES =====
@@ -430,11 +466,12 @@ fun EventInfoItemClickable(
     }
 }
 
-// ===== FUNCIÓN PARA MANEJAR CLICKS EN ITEMS =====
-private fun handleItemClick(context: Context, item: EventItem) {
+// ===== FUNCIÓN PARA MANEJAR CLICKS EN PERSONALEVENTIITEM =====
+private fun handlePersonalEventItemClick(context: Context, item: PersonalEventItem) {
     try {
-        when (item.type) {
-            EventItemType.EMAIL -> {
+        // Usar iconName para determinar la acción
+        when (item.iconName?.lowercase()) {
+            "email", "mail" -> {
                 // Abrir app de email
                 val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
                     data = Uri.parse("mailto:${item.value}")
@@ -442,7 +479,7 @@ private fun handleItemClick(context: Context, item: EventItem) {
                 context.startActivity(emailIntent)
             }
 
-            EventItemType.PHONE -> {
+            "call", "phone" -> {
                 // Abrir app de teléfono
                 val phoneIntent = Intent(Intent.ACTION_DIAL).apply {
                     data = Uri.parse("tel:${item.value}")
@@ -450,7 +487,7 @@ private fun handleItemClick(context: Context, item: EventItem) {
                 context.startActivity(phoneIntent)
             }
 
-            EventItemType.WHATSAPP -> {
+            "chat", "whatsapp" -> {
                 // Abrir WhatsApp
                 val whatsappIntent = Intent(Intent.ACTION_VIEW).apply {
                     data = Uri.parse(item.value) // Ya debe ser una URL de WhatsApp
@@ -458,15 +495,7 @@ private fun handleItemClick(context: Context, item: EventItem) {
                 context.startActivity(whatsappIntent)
             }
 
-            EventItemType.WEBSITE,
-            EventItemType.REGISTRATION_LINK,
-            EventItemType.LIVE_STREAM,
-            EventItemType.RECORDING,
-            EventItemType.FACEBOOK,
-            EventItemType.INSTAGRAM,
-            EventItemType.TWITTER,
-            EventItemType.YOUTUBE,
-            EventItemType.LINKEDIN -> {
+            "link", "website", "video", "share" -> {
                 // Abrir navegador
                 val browserIntent = Intent(Intent.ACTION_VIEW).apply {
                     data = Uri.parse(item.value)
@@ -474,15 +503,15 @@ private fun handleItemClick(context: Context, item: EventItem) {
                 context.startActivity(browserIntent)
             }
 
-            EventItemType.MAPS_LINK -> {
+            "location" -> {
                 // Abrir Google Maps
                 val mapsIntent = Intent(Intent.ACTION_VIEW).apply {
-                    data = Uri.parse(item.value)
+                    data = Uri.parse("geo:0,0?q=${item.value}")
                 }
                 context.startActivity(mapsIntent)
             }
 
-            EventItemType.ATTACHMENT -> {
+            "attachment", "file" -> {
                 // Descargar/abrir archivo
                 val fileIntent = Intent(Intent.ACTION_VIEW).apply {
                     data = Uri.parse(item.value)
@@ -492,35 +521,18 @@ private fun handleItemClick(context: Context, item: EventItem) {
 
             else -> {
                 // Para otros tipos, no hacer nada o mostrar mensaje
-                println("Tipo de item no clickeable: ${item.type}")
+                println("Tipo de item no clickeable: ${item.iconName}")
             }
         }
     } catch (e: Exception) {
         // Manejar errores (por ejemplo, si no hay app instalada)
-        println("Error al abrir ${item.type}: ${e.message}")
-
-        // Opcionalmente, puedes mostrar un Toast o Snackbar
-        // Toast.makeText(context, "No se pudo abrir ${item.text}", Toast.LENGTH_SHORT).show()
+        println("Error al abrir ${item.iconName}: ${e.message}")
     }
 }
-// Función para convertir EventInstitute a Event
-@SuppressLint("NewApi")
-private fun convertToCalendarEvent(eventInstitute: EventInstitute): Event {
-    return Event(
-        id = 0, // Room asignará el ID
-        title = eventInstitute.title,
-        shortDescription = eventInstitute.shortDescription,
-        longDescription = eventInstitute.longDescription,
-        location = eventInstitute.location,
-        colorIndex = getColorIndex(eventInstitute.color), // Convertir color a índice
-        startDate = eventInstitute.startDate ?: LocalDate.now(),
-        endDate = eventInstitute.endDate ?: eventInstitute.startDate ?: LocalDate.now(),
-        category = eventInstitute.category,
-        shape = eventInstitute.shape
-    )
-}
 
-// Función auxiliar para convertir Color a índice
+/**
+ * Función para convertir Color a índice de color
+ */
 private fun getColorIndex(color: Color): Int {
     return when (color.toArgb()) {
         0xFF00BCD4.toInt() -> 0 // Cian
@@ -532,7 +544,21 @@ private fun getColorIndex(color: Color): Int {
     }
 }
 
-@SuppressLint("NewApi")
+/**
+ * Función para crear notificación por defecto
+ */
+private fun createDefaultNotification(eventId: Int): PersonalEventNotification {
+    return PersonalEventNotification(
+        id = 0,
+        personalEventId = eventId,
+        time = 86400000, // 24 horas antes
+        title = "Recordatorio",
+        message = "Tienes un evento próximo",
+        isEnabled = true
+    )
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable
 fun CardEventBlogPreview() {
@@ -543,51 +569,30 @@ fun CardEventBlogPreview() {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // ===== EJEMPLO CON IMAGEN COMO RECURSO =====
+            // ===== EJEMPLO CON PERSONALEVENT =====
             EventDetailCardBlog(
                 event = EventInstitute(
                     id = 1,
                     title = "INNOVATECNMN 2025",
-                    shortDescription = "Registro para estudiantes lider",
+                    shortDescription = "Registro para estudiantes líder",
                     longDescription = "Cumbre nacional de desarrollo tecnológico...",
                     location = "Edificio 53",
-                    imagePath = R.drawable.seminario.toString(), // Esto funcionará
+                    imagePath = R.drawable.seminario.toString(),
                     startDate = LocalDate.of(2025, 11, 28),
                     endDate = LocalDate.of(2025, 11, 29),
-                    category = EventCategory.CAREER,
                     color = Color(0xFF00BCD4),
-                    notification = EventNotification(
+                    category = PersonalEventType.SUBSCRIBED,
+                    items = emptyList(),
+                    instituteId = 1,
+                    notification = PersonalEventNotification(
                         id = 1,
+                        personalEventId = 0,
                         time = 86400000,
                         title = "Recordatorio",
                         message = "Convocatoria Servicio Social mañana",
                         isEnabled = true
                     )
                 )
-            )
-
-            // ===== EJEMPLO SIN IMAGEN =====
-            EventCardBlog(
-                EventInstitute(
-                    id = 2,
-                    title = "Evento sin imagen",
-                    shortDescription = "Evento de prueba",
-                    longDescription = "Este evento no tiene imagen y debería funcionar correctamente",
-                    location = "Laboratorio 1",
-                    imagePath = "", // Sin imagen
-                    startDate = LocalDate.of(2025, 6, 10),
-                    endDate = LocalDate.of(2025, 6, 10),
-                    category = EventCategory.PERSONAL,
-                    color = Color(0xFFE91E63),
-                    notification = EventNotification(
-                        id = 2,
-                        time = 3600000,
-                        title = "Recordatorio",
-                        message = "Evento en 1 hora",
-                        isEnabled = false
-                    )
-                ),
-                modifier = Modifier
             )
         }
     }

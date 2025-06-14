@@ -7,15 +7,15 @@ import java.time.YearMonth
 class EventProcessor {
     companion object {
         /**
-         * Procesa eventos para un mes utilizando el nuevo modelo de eventos
+         * Procesa eventos personales para un mes
          */
         @SuppressLint("NewApi")
-        fun processEvents(month: Int, year: Int, events: List<Event>): Map<Int, ProcessedEvent> {
-            val processedEvents = mutableMapOf<Int, ProcessedEvent>()
+        fun processPersonalEvents(month: Int, year: Int, events: List<PersonalEvent>): Map<Int, ProcessedPersonalEvent> {
+            val processedEvents = mutableMapOf<Int, ProcessedPersonalEvent>()
             val yearMonth = YearMonth.of(year, month)
 
             // Mapa temporal para agrupar eventos por día
-            val eventsByDay = mutableMapOf<Int, MutableList<Event>>()
+            val eventsByDay = mutableMapOf<Int, MutableList<PersonalEvent>>()
 
             // Primero, agrupa todos los eventos por día
             for (day in 1..yearMonth.lengthOfMonth()) {
@@ -23,7 +23,7 @@ class EventProcessor {
 
                 // Encontrar todos los eventos para este día
                 val eventsForDay = events.filter { event ->
-                    event.occursOn(date)
+                    event.occursOn(date) && event.isVisible
                 }
 
                 // Si hay eventos para este día, guardarlos en el mapa
@@ -32,24 +32,36 @@ class EventProcessor {
                 }
             }
 
-            // Luego, procesa cada día para crear ProcessedEvent con evento principal y adicionales
+            // Luego, procesa cada día para crear ProcessedPersonalEvent
             for ((day, eventsForDay) in eventsByDay) {
                 val date = LocalDate.of(year, month, day)
 
                 if (eventsForDay.isNotEmpty()) {
+                    // Ordenar eventos por prioridad y hora
+                    val sortedEvents = eventsForDay.sortedWith(
+                        compareBy<PersonalEvent> { event ->
+                            when (event.type) {
+                                PersonalEventType.SUBSCRIBED -> 0  // Eventos institucionales primero
+                                PersonalEventType.PERSONAL -> 1   // Eventos personales después
+                                PersonalEventType.HIDDEN -> 2     // Eventos ocultos al final
+                                PersonalEventType.ACADEMIC -> TODO()
+                            }
+                        }.thenBy { it.startDate }
+                    )
+
                     // Tomar el primer evento como principal
-                    val mainEvent = eventsForDay[0]
+                    val mainEvent = sortedEvents[0]
                     val shape = mainEvent.getShapeForDate(date)
 
                     // Los demás eventos se agregan como adicionales
-                    val additionalEvents = if (eventsForDay.size > 1) {
-                        eventsForDay.subList(1, eventsForDay.size)
+                    val additionalEvents = if (sortedEvents.size > 1) {
+                        sortedEvents.subList(1, sortedEvents.size)
                     } else {
                         emptyList()
                     }
 
-                    // Crear el ProcessedEvent con el evento principal y los adicionales
-                    processedEvents[day] = ProcessedEvent(
+                    // Crear el ProcessedPersonalEvent
+                    processedEvents[day] = ProcessedPersonalEvent(
                         day = day,
                         event = mainEvent,
                         shape = shape,
@@ -62,31 +74,72 @@ class EventProcessor {
         }
 
         /**
-         * Convierte eventos del nuevo formato al formato compatible con la implementación actual
+         * Filtra eventos por tipo
          */
-        fun convertEventsForMonth(month: Int, events: List<Event>): List<Event> {
-            val compatibleEvents = mutableListOf<Event>()
+        fun filterEventsByType(events: List<PersonalEvent>, type: PersonalEventType): List<PersonalEvent> {
+            return events.filter { it.type == type && it.isVisible }
+        }
 
-            events.forEach { event ->
-                val compatibleEvent = event.getCompatibleEvent(month)
-                if (compatibleEvent != null) {
-                    compatibleEvents.add(compatibleEvent)
-                }
-            }
+        /**
+         * Obtiene eventos para una fecha específica
+         */
+        @SuppressLint("NewApi")
+        fun getEventsForDate(date: LocalDate, events: List<PersonalEvent>): List<PersonalEvent> {
+            return events.filter { event ->
+                event.occursOn(date) && event.isVisible
+            }.sortedWith(
+                compareBy<PersonalEvent> { event ->
+                    when (event.type) {
+                        PersonalEventType.SUBSCRIBED -> 0
+                        PersonalEventType.PERSONAL -> 1
+                        PersonalEventType.HIDDEN -> 2
+                        PersonalEventType.ACADEMIC -> TODO()
+                    }
+                }.thenBy { it.startDate }
+            )
+        }
 
-            return compatibleEvents
+        /**
+         * Obtiene eventos próximos (siguientes 7 días)
+         */
+        @SuppressLint("NewApi")
+        fun getUpcomingEvents(events: List<PersonalEvent>): List<PersonalEvent> {
+            val today = LocalDate.now()
+            val nextWeek = today.plusDays(7)
+
+            return events.filter { event ->
+                event.isVisible &&
+                        ((event.startDate.isEqual(today) || event.startDate.isAfter(today)) &&
+                                (event.startDate.isBefore(nextWeek) || event.startDate.isEqual(nextWeek)))
+            }.sortedBy { it.startDate }
+        }
+
+        /**
+         * Cuenta eventos por tipo para estadísticas
+         */
+        fun getEventStatistics(events: List<PersonalEvent>): EventStatistics {
+            val visibleEvents = events.filter { it.isVisible }
+
+            return EventStatistics(
+                totalEvents = visibleEvents.size,
+                personalEvents = visibleEvents.count { it.type == PersonalEventType.PERSONAL },
+                subscribedEvents = visibleEvents.count { it.type == PersonalEventType.SUBSCRIBED },
+                hiddenEvents = events.count { !it.isVisible }
+            )
         }
     }
 }
 
-data class ProcessedEvent(
+data class ProcessedPersonalEvent(
     val day: Int,
-    val event: Event,               // Evento principal
+    val event: PersonalEvent,               // Evento principal
     val shape: EventShape,
-    val additionalEvents: List<Event> = emptyList() // Eventos adicionales
+    val additionalEvents: List<PersonalEvent> = emptyList() // Eventos adicionales
 )
 
-
-
-
-
+data class EventStatistics(
+    val totalEvents: Int,
+    val personalEvents: Int,
+    val subscribedEvents: Int,
+    val hiddenEvents: Int
+)

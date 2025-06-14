@@ -2,13 +2,8 @@ package com.example.academically.data
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.AttachFile
-import androidx.compose.material.icons.filled.Call
 import androidx.compose.ui.graphics.Color
 import com.example.academically.R
-import com.example.academically.data.api.EventItemType
 import java.time.LocalDate
 
 data class Career(
@@ -47,177 +42,15 @@ data class EventInstitute(
     val color: Color,
     val startDate: LocalDate? = null,
     val endDate: LocalDate? = null,
-    val category: EventCategory = EventCategory.PERSONAL,
+    val category: PersonalEventType =PersonalEventType.SUBSCRIBED,
     val imagePath: String = "",
-    val items: List<EventItem> = emptyList(),
-    val notification: EventNotification? = null,
+    val items: List<PersonalEventItem> = emptyList(),
+    val notification: PersonalEventNotification? = null,
     val mesID: Int? = null,
     val shape: EventShape = EventShape.RoundedFull,
     // NUEVO: ID del instituto al que pertenece el evento
     val instituteId: Int? = null
 )
-
-object SampleInstituteData {
-    fun getSampleInstitutes(): List<Institute> {
-        return listOf(
-            Institute(
-                instituteID = 1,
-                acronym = "ITP",
-                name = "Instituto Tecnológico de Puebla",
-                address = "Del Tecnológico 420, Corredor Industrial la Ciénega, 72220 Heroica Puebla de Zaragoza, Pue.",
-                email = "info@puebla.tecnm.mx",
-                phone = "222 229 8810",
-                studentNumber = 6284,
-                teacherNumber = 298,
-                logo = null,
-                webSite = "https://www.puebla.tecnm.mx",
-                facebook = "https://www.facebook.com/TecNMPuebla",
-                instagram = "https://www.instagram.com/tecnmpuebla",
-                youtube = "https://www.youtube.com/user/TECPUEBLA",
-                listCareer = listOf(
-                    Career(
-                        careerID = 1,
-                        name = "Ingeniería en Tecnologías de la Información y Comunicaciones",
-                        acronym = "TICS",
-                    ),
-                    Career(
-                        careerID = 2,
-                        name = "Ingeniería Industrial",
-                        acronym = "Ing. Indust",
-                    ),
-                    Career(
-                        careerID = 3,
-                        name = "Ingeniería Electrónica",
-                        acronym = "Electrónica",
-                    ),
-                    Career(
-                        careerID = 4,
-                        name = "Ingeniería Eléctrica",
-                        acronym = "Eléctrica",
-                    ),
-                    Career(
-                        careerID = 5,
-                        name = "Ingeniería en Gestión Empresarial",
-                        acronym = "Gestión Empresarial",
-                    ),
-                    Career(
-                        careerID = 6,
-                        name = "Ingeniería Mecánica",
-                        acronym = "Mecánica",
-                    )
-                )
-            ),
-            Institute(
-                instituteID = 2,
-                acronym = "ITT",
-                name = "Instituto Tecnológico de Tijuana",
-                address = "Calzada del Tecnológico S/N, Fraccionamiento Tomas Aquino, 22414 Tijuana, B.C.",
-                email = "webmaster@tectijuana.mx",
-                phone = "664 607 8400",
-                studentNumber = 7500,
-                teacherNumber = 350,
-                logo = null,
-                webSite = "https://www.tijuana.tecnm.mx",
-                facebook = "https://www.facebook.com/tectijuana",
-                instagram = "https://www.instagram.com/tecnmtijuana",
-                youtube = null,
-                listCareer = listOf(
-                    Career(
-                        careerID = 7,
-                        name = "Licenciatura en Administración",
-                        acronym = "Administración",
-                    ),
-                    Career(
-                        careerID = 8,
-                        name = "Ingeniería en Tecnologías de la Información y Comunicaciones",
-                        acronym = "TICS",
-                    )
-                )
-            ),
-            Institute(
-                instituteID = 3,
-                acronym = "ITH",
-                name = "Instituto Tecnológico de Hermosillo",
-                address = "Av. Tecnológico S/N, Col. El Sahuaro, 83170 Hermosillo, Son.",
-                email = "contacto@hermosillo.tecnm.mx",
-                phone = "662 260 6500",
-                studentNumber = 4200,
-                teacherNumber = 220,
-                logo = null,
-                webSite = "https://www.hermosillo.tecnm.mx",
-                facebook = "https://www.facebook.com/TecNMHermosillo",
-                instagram = null,
-                youtube = null,
-                listCareer = listOf(
-                    Career(
-                        careerID = 9,
-                        name = "Ingeniería Industrial",
-                        acronym = "Ing. Indust",
-                    ),
-                    Career(
-                        careerID = 10,
-                        name = "Ingeniería Electrónica",
-                        acronym = "Electrónica",
-                    )
-                )
-            ),
-            Institute(
-                instituteID = 4,
-                acronym = "ITT",
-                name = "Instituto Tecnológico de Toluca",
-                address = "Av. Tecnológico s/n, Agrícola Bella Vista, 52149 Metepec, Méx.",
-                email = "webmaster@toluca.tecnm.mx",
-                phone = "722 208 7200",
-                studentNumber = 5800,
-                teacherNumber = 310,
-                logo = null,
-                webSite = "https://www.toluca.tecnm.mx",
-                facebook = null,
-                instagram = null,
-                youtube = null,
-                listCareer = listOf(
-                    Career(
-                        careerID = 11,
-                        name = "Ingeniería Eléctrica",
-                        acronym = "Eléctrica",
-                    ),
-                    Career(
-                        careerID = 12,
-                        name = "Ingeniería en Gestión Empresarial",
-                        acronym = "Gestión Empresarial",
-                    )
-                )
-            ),
-            Institute(
-                instituteID = 5,
-                acronym = "ITSX",
-                name = "Instituto Tecnológico Superior de Xalapa",
-                address = "Sección 5A, Reserva Territorial, 91060 Xalapa, Ver.",
-                email = "contacto@itsx.edu.mx",
-                phone = "228 165 0525",
-                studentNumber = 3800,
-                teacherNumber = 190,
-                logo = null,
-                webSite = "https://www.itsx.edu.mx",
-                facebook = "https://www.facebook.com/ITSXalapa",
-                instagram = "https://www.instagram.com/itsxalapa",
-                youtube = "https://www.youtube.com/user/ITSXalapa",
-                listCareer = listOf(
-                    Career(
-                        careerID = 13,
-                        name = "Ingeniería Mecánica",
-                        acronym = "Mecánica",
-                    ),
-                    Career(
-                        careerID = 14,
-                        name = "Licenciatura en Administración",
-                        acronym = "Administración",
-                    )
-                )
-            )
-        )
-    }
-}
 
 object BlogDataExample {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -249,16 +82,9 @@ object BlogDataExample {
                 imagePath = R.drawable.inovatecnm.toString(),
                 startDate = LocalDate.of(2025, 11, 28),
                 endDate = LocalDate.of(2025, 11, 29),
-                category = EventCategory.INSTITUTIONAL,
+                category = PersonalEventType.SUBSCRIBED,
                 color = Color(0xFF00BCD4), // Cian
                 instituteId = 1, // ITP
-                notification = EventNotification(
-                    id = 1,
-                    time = 86400000, // 1 día
-                    title = "Recordatorio",
-                    message = "Convocatoria Servicio Social mañana",
-                    isEnabled = true
-                )
             ),
             EventInstitute(
                 id = 2,
@@ -268,7 +94,7 @@ object BlogDataExample {
                 location = "Modalidad Híbrida",
                 startDate = LocalDate.of(2025, 9, 25),
                 endDate = LocalDate.of(2025, 9, 26),
-                category = EventCategory.INSTITUTIONAL,
+                category = PersonalEventType.SUBSCRIBED,
                 imagePath = R.drawable.congreso.toString(),
                 color = Color(0xFF2196F3),
                 instituteId = 1 // ITP
@@ -281,7 +107,7 @@ object BlogDataExample {
                 location = "Edificio 36",
                 startDate = LocalDate.of(2025, 4, 28),
                 endDate = LocalDate.of(2025, 4, 28),
-                category = EventCategory.CAREER,
+                category = PersonalEventType.SUBSCRIBED,
                 imagePath = R.drawable.concurso.toString(),
                 color = Color(0xFF4CAF50),
                 instituteId = 1, // ITP ,
@@ -295,7 +121,7 @@ object BlogDataExample {
                 location = "Edificio 53",
                 startDate = LocalDate.of(2025, 9, 15),
                 endDate = LocalDate.of(2025, 9, 15),
-                category = EventCategory.CAREER,
+                category = PersonalEventType.SUBSCRIBED,
                 color = Color(0xFF4CAF50),
                 instituteId = 1 // ITP
             ),
@@ -306,16 +132,10 @@ object BlogDataExample {
                 longDescription = "Información sobre los requisitos y proceso para realizar el servicio social",
                 startDate = LocalDate.of(2025, 5, 10),
                 endDate = LocalDate.of(2025, 5, 10),
-                category = EventCategory.CAREER,
+                category = PersonalEventType.SUBSCRIBED,
                 color = Color(0xFFFFAB00),
                 instituteId = 1, // ITP
-                notification = EventNotification(
-                    id = 1,
-                    time = 86400000,
-                    title = "Recordatorio",
-                    message = "Plática de servicio social mañana",
-                    isEnabled = true
-                )
+
             )
         )
     }

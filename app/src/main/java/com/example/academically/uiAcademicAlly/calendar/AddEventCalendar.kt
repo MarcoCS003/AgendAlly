@@ -28,15 +28,16 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.academically.ViewModel.EventViewModel
-import com.example.academically.data.Event
-import com.example.academically.data.EventCategory
-import com.example.academically.data.EventShape
+import com.example.academically.data.PersonalEvent
+import com.example.academically.data.PersonalEventType
 import com.example.academically.data.database.AcademicAllyDatabase
-import com.example.academically.data.repository.EventRepository
+import com.example.academically.data.repository.PersonalEventRepository
 import com.example.academically.ui.theme.DarkThemeScheduleColors
 import com.example.academically.ui.theme.LightThemeScheduleColors
 import com.example.academically.ui.theme.ScheduleColorsProvider
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.Month
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
@@ -51,7 +52,7 @@ fun AddEventScreenWithViewModel(
     // Inicializar ViewModel
     val context = LocalContext.current
     val database = AcademicAllyDatabase.getDatabase(context)
-    val repository = EventRepository(database.eventDao())
+    val repository = PersonalEventRepository(database.personalEventDao())
     val eventViewModel: EventViewModel = viewModel(
         factory = EventViewModel.Factory(repository)
     )
@@ -342,8 +343,9 @@ fun AddEventScreenWithViewModel(
             // Botón de agregar
             Button(
                 onClick = {
+                    val now = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
                     // Crear evento
-                    val newEvent = Event(
+                    val newEvent = PersonalEvent(
                         id = 0, // El ID lo asignará Room
                         title = title,
                         shortDescription = description,
@@ -352,9 +354,16 @@ fun AddEventScreenWithViewModel(
                         colorIndex = selectedColor,
                         startDate = selectedCreateStartDay,
                         endDate = if (isMultiDayEvent) selectedCreateStartEnd else selectedCreateStartDay,
-                        category = EventCategory.PERSONAL,
-                        shape = EventShape.RoundedFull
+                        type = PersonalEventType.PERSONAL,
+                        institutionalEventId = null, // Para eventos personales
+                        imagePath = "",
+                        items = emptyList(), // Sin items por ahora
+                        notification = null, // Sin notificación por ahora
+                        isVisible = true,
+                        createdAt = now,
+                        updatedAt = null
                     )
+
 
                     // Guardar el evento
                     viewModel.insertEvent(newEvent)
@@ -498,11 +507,11 @@ fun DatePickerDialog(
 @SuppressLint("NewApi")
 @Composable
 fun SimpleCalendarView(
-    currentMonth: java.time.Month,
+    currentMonth: Month,
     currentYear: Int,
     selectedDate: LocalDate,
     minDate: LocalDate?, // Fecha mínima seleccionable (opcional)
-    onMonthYearChanged: (java.time.Month, Int) -> Unit,
+    onMonthYearChanged: (Month, Int) -> Unit,
     onDateSelected: (LocalDate) -> Unit
 ) {
     // Usamos estado mutable para poder cambiar el mes y año
@@ -529,8 +538,8 @@ fun SimpleCalendarView(
     }
 
     // Calcular límites para los botones
-    val isFirstMonth = month == java.time.Month.JANUARY
-    val isLastMonth = month == java.time.Month.DECEMBER
+    val isFirstMonth = month == Month.JANUARY
+    val isLastMonth = month == Month.DECEMBER
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         // Encabezado del mes
@@ -547,7 +556,7 @@ fun SimpleCalendarView(
                         month = month.minus(1)
                     } else {
                         // Si es enero, vamos a diciembre del año anterior
-                        month = java.time.Month.DECEMBER
+                        month = Month.DECEMBER
                         year -= 1
                     }
                 },
@@ -583,7 +592,7 @@ fun SimpleCalendarView(
                         month = month.plus(1)
                     } else {
                         // Si es diciembre, vamos a enero del año siguiente
-                        month = java.time.Month.JANUARY
+                        month = Month.JANUARY
                         year += 1
                     }
                 },
