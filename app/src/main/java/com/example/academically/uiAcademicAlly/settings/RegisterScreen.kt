@@ -2,7 +2,6 @@
 
 package com.academically.ui.screens.auth
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -15,10 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -26,18 +22,24 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.academically.R
-import com.example.academically.data.UserRole
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.academically.ViewModel.AuthViewModel
+import com.example.academically.ViewModel.AuthUiState
+import com.example.academically.data.model.UserRole
 import com.example.academically.ui.theme.AcademicAllyTheme
 
 @Composable
-fun RegisterScreen(
+fun RegisterScreenWithViewModel(
+    viewModel: AuthViewModel = viewModel(),
     onRegisterSuccess: (userRole: UserRole) -> Unit = {},
     onNavigateToLogin: () -> Unit = {},
-    onGoogleSignIn: () -> Unit = {},
-    isLoading: Boolean = false,
-    errorMessage: String? = null
+    onGoogleSignIn: () -> Unit = {}
 ) {
+    // Estados del ViewModel
+    val authUiState by viewModel.authUiState.collectAsState()
+    val registerUiState by viewModel.registerUiState.collectAsState()
+
+    // Estados locales para los campos
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -46,11 +48,22 @@ fun RegisterScreen(
     var isPasswordVisible by remember { mutableStateOf(false) }
     var isConfirmPasswordVisible by remember { mutableStateOf(false) }
 
+    // Estados de error
     var nameError by remember { mutableStateOf("") }
     var emailError by remember { mutableStateOf("") }
     var passwordError by remember { mutableStateOf("") }
     var confirmPasswordError by remember { mutableStateOf("") }
     var termsError by remember { mutableStateOf("") }
+
+    // Efectos para manejar el estado de autenticación
+    LaunchedEffect(authUiState) {
+        when (authUiState) {
+            is AuthUiState.Authenticated -> {
+                onRegisterSuccess((authUiState as AuthUiState.Authenticated).user.role)
+            }
+            else -> { /* No hacer nada */ }
+        }
+    }
 
     // Validaciones
     fun validateName(): Boolean {
@@ -139,12 +152,253 @@ fun RegisterScreen(
         val isTermsValid = validateTerms()
 
         if (isNameValid && isEmailValid && isPasswordValid && isConfirmPasswordValid && isTermsValid) {
-            // Aquí iría la lógica de registro real
-            // Por ahora simulamos un registro exitoso
+            // Limpiar errores previos
+            viewModel.clearRegisterError()
+            // Llamar al ViewModel para hacer registro
+            viewModel.registerUser(name, email, password)
+        }
+    }
+
+    fun handleGoogleSignIn() {
+        // Por ahora simulamos un token
+        val mockGoogleToken = "mock_google_token_${System.currentTimeMillis()}"
+        viewModel.loginWithGoogle(mockGoogleToken)
+    }
+
+    // Limpiar errores cuando el usuario escribe
+    LaunchedEffect(name) {
+        if (nameError.isNotEmpty()) nameError = ""
+        if (registerUiState.errorMessage != null) viewModel.clearRegisterError()
+    }
+
+    LaunchedEffect(email) {
+        if (emailError.isNotEmpty()) emailError = ""
+        if (registerUiState.errorMessage != null) viewModel.clearRegisterError()
+    }
+
+    LaunchedEffect(password) {
+        if (passwordError.isNotEmpty()) passwordError = ""
+        if (registerUiState.errorMessage != null) viewModel.clearRegisterError()
+    }
+
+    LaunchedEffect(confirmPassword) {
+        if (confirmPasswordError.isNotEmpty()) confirmPasswordError = ""
+    }
+
+    LaunchedEffect(acceptTerms) {
+        if (termsError.isNotEmpty()) termsError = ""
+    }
+
+    RegisterScreenContent(
+        name = name,
+        onNameChange = { name = it },
+        email = email,
+        onEmailChange = { email = it },
+        password = password,
+        onPasswordChange = { password = it },
+        confirmPassword = confirmPassword,
+        onConfirmPasswordChange = { confirmPassword = it },
+        acceptTerms = acceptTerms,
+        onAcceptTermsChange = { acceptTerms = it },
+        isPasswordVisible = isPasswordVisible,
+        onPasswordVisibilityChange = { isPasswordVisible = it },
+        isConfirmPasswordVisible = isConfirmPasswordVisible,
+        onConfirmPasswordVisibilityChange = { isConfirmPasswordVisible = it },
+        nameError = nameError,
+        emailError = emailError,
+        passwordError = passwordError,
+        confirmPasswordError = confirmPasswordError,
+        termsError = termsError,
+        isLoading = registerUiState.isLoading,
+        errorMessage = registerUiState.errorMessage,
+        onRegisterClick = { handleRegister() },
+        onGoogleSignInClick = { handleGoogleSignIn() },
+        onNavigateToLogin = onNavigateToLogin
+    )
+}
+
+@Composable
+fun RegisterScreen(
+    onRegisterSuccess: (userRole: UserRole) -> Unit = {},
+    onNavigateToLogin: () -> Unit = {},
+    onGoogleSignIn: () -> Unit = {},
+    isLoading: Boolean = false,
+    errorMessage: String? = null
+) {
+    var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var acceptTerms by remember { mutableStateOf(false) }
+    var isPasswordVisible by remember { mutableStateOf(false) }
+    var isConfirmPasswordVisible by remember { mutableStateOf(false) }
+
+    var nameError by remember { mutableStateOf("") }
+    var emailError by remember { mutableStateOf("") }
+    var passwordError by remember { mutableStateOf("") }
+    var confirmPasswordError by remember { mutableStateOf("") }
+    var termsError by remember { mutableStateOf("") }
+
+    fun validateName(): Boolean {
+        return when {
+            name.isBlank() -> {
+                nameError = "El nombre es obligatorio"
+                false
+            }
+            name.length < 2 -> {
+                nameError = "El nombre debe tener al menos 2 caracteres"
+                false
+            }
+            else -> {
+                nameError = ""
+                true
+            }
+        }
+    }
+
+    fun validateEmail(): Boolean {
+        return when {
+            email.isBlank() -> {
+                emailError = "El email es obligatorio"
+                false
+            }
+            !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
+                emailError = "Formato de email inválido"
+                false
+            }
+            else -> {
+                emailError = ""
+                true
+            }
+        }
+    }
+
+    fun validatePassword(): Boolean {
+        return when {
+            password.isBlank() -> {
+                passwordError = "La contraseña es obligatoria"
+                false
+            }
+            password.length < 6 -> {
+                passwordError = "La contraseña debe tener al menos 6 caracteres"
+                false
+            }
+            else -> {
+                passwordError = ""
+                true
+            }
+        }
+    }
+
+    fun validateConfirmPassword(): Boolean {
+        return when {
+            confirmPassword.isBlank() -> {
+                confirmPasswordError = "Confirma tu contraseña"
+                false
+            }
+            confirmPassword != password -> {
+                confirmPasswordError = "Las contraseñas no coinciden"
+                false
+            }
+            else -> {
+                confirmPasswordError = ""
+                true
+            }
+        }
+    }
+
+    fun validateTerms(): Boolean {
+        return if (!acceptTerms) {
+            termsError = "Debes aceptar los términos y condiciones"
+            false
+        } else {
+            termsError = ""
+            true
+        }
+    }
+
+    fun handleRegister() {
+        val isNameValid = validateName()
+        val isEmailValid = validateEmail()
+        val isPasswordValid = validatePassword()
+        val isConfirmPasswordValid = validateConfirmPassword()
+        val isTermsValid = validateTerms()
+
+        if (isNameValid && isEmailValid && isPasswordValid && isConfirmPasswordValid && isTermsValid) {
             onRegisterSuccess(UserRole.STUDENT)
         }
     }
 
+    RegisterScreenContent(
+        name = name,
+        onNameChange = {
+            name = it
+            if (nameError.isNotEmpty()) nameError = ""
+        },
+        email = email,
+        onEmailChange = {
+            email = it
+            if (emailError.isNotEmpty()) emailError = ""
+        },
+        password = password,
+        onPasswordChange = {
+            password = it
+            if (passwordError.isNotEmpty()) passwordError = ""
+        },
+        confirmPassword = confirmPassword,
+        onConfirmPasswordChange = {
+            confirmPassword = it
+            if (confirmPasswordError.isNotEmpty()) confirmPasswordError = ""
+        },
+        acceptTerms = acceptTerms,
+        onAcceptTermsChange = {
+            acceptTerms = it
+            if (termsError.isNotEmpty()) termsError = ""
+        },
+        isPasswordVisible = isPasswordVisible,
+        onPasswordVisibilityChange = { isPasswordVisible = it },
+        isConfirmPasswordVisible = isConfirmPasswordVisible,
+        onConfirmPasswordVisibilityChange = { isConfirmPasswordVisible = it },
+        nameError = nameError,
+        emailError = emailError,
+        passwordError = passwordError,
+        confirmPasswordError = confirmPasswordError,
+        termsError = termsError,
+        isLoading = isLoading,
+        errorMessage = errorMessage,
+        onRegisterClick = { handleRegister() },
+        onGoogleSignInClick = onGoogleSignIn,
+        onNavigateToLogin = onNavigateToLogin
+    )
+}
+
+@Composable
+private fun RegisterScreenContent(
+    name: String,
+    onNameChange: (String) -> Unit,
+    email: String,
+    onEmailChange: (String) -> Unit,
+    password: String,
+    onPasswordChange: (String) -> Unit,
+    confirmPassword: String,
+    onConfirmPasswordChange: (String) -> Unit,
+    acceptTerms: Boolean,
+    onAcceptTermsChange: (Boolean) -> Unit,
+    isPasswordVisible: Boolean,
+    onPasswordVisibilityChange: (Boolean) -> Unit,
+    isConfirmPasswordVisible: Boolean,
+    onConfirmPasswordVisibilityChange: (Boolean) -> Unit,
+    nameError: String,
+    emailError: String,
+    passwordError: String,
+    confirmPasswordError: String,
+    termsError: String,
+    isLoading: Boolean,
+    errorMessage: String?,
+    onRegisterClick: () -> Unit,
+    onGoogleSignInClick: () -> Unit,
+    onNavigateToLogin: () -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -167,10 +421,8 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // título
-
             Text(
-                text = "Únete a AcademicAlly",
+                text = "Únete a AgendAlly",
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 28.sp
@@ -188,7 +440,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Formulario de registro
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -214,10 +465,7 @@ fun RegisterScreen(
                     // Campo de nombre
                     OutlinedTextField(
                         value = name,
-                        onValueChange = {
-                            name = it
-                            if (nameError.isNotEmpty()) nameError = ""
-                        },
+                        onValueChange = onNameChange,
                         label = { Text("Nombre completo") },
                         placeholder = { Text("Ej: Juan Pérez López") },
                         modifier = Modifier.fillMaxWidth(),
@@ -234,10 +482,7 @@ fun RegisterScreen(
                     // Campo de email
                     OutlinedTextField(
                         value = email,
-                        onValueChange = {
-                            email = it
-                            if (emailError.isNotEmpty()) emailError = ""
-                        },
+                        onValueChange = onEmailChange,
                         label = { Text("Email") },
                         placeholder = { Text("ejemplo@correo.com") },
                         modifier = Modifier.fillMaxWidth(),
@@ -254,10 +499,7 @@ fun RegisterScreen(
                     // Campo de contraseña
                     OutlinedTextField(
                         value = password,
-                        onValueChange = {
-                            password = it
-                            if (passwordError.isNotEmpty()) passwordError = ""
-                        },
+                        onValueChange = onPasswordChange,
                         label = { Text("Contraseña") },
                         placeholder = { Text("Mínimo 6 caracteres") },
                         modifier = Modifier.fillMaxWidth(),
@@ -269,7 +511,7 @@ fun RegisterScreen(
                         },
                         trailingIcon = {
                             IconButton(
-                                onClick = { isPasswordVisible = !isPasswordVisible }
+                                onClick = { onPasswordVisibilityChange(!isPasswordVisible) }
                             ) {
                                 Icon(
                                     imageVector = if (isPasswordVisible) {
@@ -297,10 +539,7 @@ fun RegisterScreen(
                     // Campo de confirmar contraseña
                     OutlinedTextField(
                         value = confirmPassword,
-                        onValueChange = {
-                            confirmPassword = it
-                            if (confirmPasswordError.isNotEmpty()) confirmPasswordError = ""
-                        },
+                        onValueChange = onConfirmPasswordChange,
                         label = { Text("Confirmar contraseña") },
                         placeholder = { Text("Repite tu contraseña") },
                         modifier = Modifier.fillMaxWidth(),
@@ -312,7 +551,7 @@ fun RegisterScreen(
                         },
                         trailingIcon = {
                             IconButton(
-                                onClick = { isConfirmPasswordVisible = !isConfirmPasswordVisible }
+                                onClick = { onConfirmPasswordVisibilityChange(!isConfirmPasswordVisible) }
                             ) {
                                 Icon(
                                     imageVector = if (isConfirmPasswordVisible) {
@@ -344,10 +583,7 @@ fun RegisterScreen(
                     ) {
                         Checkbox(
                             checked = acceptTerms,
-                            onCheckedChange = {
-                                acceptTerms = it
-                                if (termsError.isNotEmpty()) termsError = ""
-                            }
+                            onCheckedChange = onAcceptTermsChange
                         )
                         Text(
                             text = "Acepto los términos y condiciones",
@@ -387,7 +623,7 @@ fun RegisterScreen(
 
                     // Botón de registro
                     Button(
-                        onClick = { handleRegister() },
+                        onClick = onRegisterClick,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
@@ -429,7 +665,7 @@ fun RegisterScreen(
 
                     // Botón de Google Sign In
                     OutlinedButton(
-                        onClick = { onGoogleSignIn() },
+                        onClick = onGoogleSignInClick,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
@@ -464,7 +700,7 @@ fun RegisterScreen(
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
                         TextButton(
-                            onClick = { onNavigateToLogin() },
+                            onClick = onNavigateToLogin,
                             enabled = !isLoading
                         ) {
                             Text(
@@ -495,25 +731,5 @@ fun RegisterScreen(
 private fun RegisterScreenPreview() {
     AcademicAllyTheme {
         RegisterScreen()
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-private fun RegisterScreenLoadingPreview() {
-    AcademicAllyTheme {
-        RegisterScreen(
-            isLoading = true
-        )
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-private fun RegisterScreenErrorPreview() {
-    AcademicAllyTheme {
-        RegisterScreen(
-            errorMessage = "Este email ya está registrado. Intenta con otro."
-        )
     }
 }

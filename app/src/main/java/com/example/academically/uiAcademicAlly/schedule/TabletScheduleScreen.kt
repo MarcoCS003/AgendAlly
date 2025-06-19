@@ -3,9 +3,6 @@ package com.example.academically.uiAcademicAlly.schedule
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,8 +12,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.academically.ViewModel.ScheduleViewModel
 import com.example.academically.ViewModel.ScheduleViewModelFactory
-import com.example.academically.data.Schedule
-import com.example.academically.data.database.AcademicAllyDatabase
+import com.example.academically.data.model.Schedule
+import com.example.academically.data.local.database.AcademicAllyDatabase
 import com.example.academically.data.repositorty.ScheduleRepository
 
 @RequiresApi(Build.VERSION_CODES.O)

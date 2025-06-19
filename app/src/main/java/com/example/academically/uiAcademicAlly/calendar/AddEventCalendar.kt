@@ -28,9 +28,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.academically.ViewModel.EventViewModel
-import com.example.academically.data.PersonalEvent
-import com.example.academically.data.PersonalEventType
-import com.example.academically.data.database.AcademicAllyDatabase
+import com.example.academically.data.model.PersonalEvent
+import com.example.academically.data.model.PersonalEventType
+import com.example.academically.data.local.database.AcademicAllyDatabase
 import com.example.academically.data.repository.PersonalEventRepository
 import com.example.academically.ui.theme.DarkThemeScheduleColors
 import com.example.academically.ui.theme.LightThemeScheduleColors

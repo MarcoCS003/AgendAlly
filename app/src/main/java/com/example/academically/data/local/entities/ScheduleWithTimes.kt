@@ -1,8 +1,10 @@
-package com.example.academically.data.entities
+package com.example.academically.data.local.entities
 
 
 import androidx.room.Embedded
 import androidx.room.Relation
+import com.example.academically.data.local.entities.ScheduleEntity
+import com.example.academically.data.local.entities.ScheduleTimeEntity
 
 data class ScheduleWithTimes(
     @Embedded val schedule: ScheduleEntity,

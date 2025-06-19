@@ -63,9 +63,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.academically.ViewModel.ScheduleViewModel
 import com.example.academically.ViewModel.ScheduleViewModelFactory
-import com.example.academically.data.Schedule
-import com.example.academically.data.ScheduleTime
-import com.example.academically.data.database.AcademicAllyDatabase
+import com.example.academically.data.model.Schedule
+import com.example.academically.data.model.ScheduleTime
+import com.example.academically.data.local.database.AcademicAllyDatabase
 import com.example.academically.data.repositorty.ScheduleRepository
 import com.example.academically.uiAcademicAlly.calendar.DaysOfWeek
 import java.time.DayOfWeek

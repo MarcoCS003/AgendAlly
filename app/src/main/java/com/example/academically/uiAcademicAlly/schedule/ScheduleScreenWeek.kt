@@ -48,8 +48,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.academically.data.Schedule
-import com.example.academically.data.ScheduleTime
+import com.example.academically.data.model.Schedule
+import com.example.academically.data.model.ScheduleTime
 import com.example.academically.ui.theme.ScheduleColorsProvider
 import com.example.academically.uiAcademicAlly.calendar.DaysOfWeek
 import java.time.DayOfWeek

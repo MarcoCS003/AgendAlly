@@ -2,11 +2,11 @@ package com.example.academically.data.mappers
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import com.example.academically.data.Schedule
-import com.example.academically.data.ScheduleTime
-import com.example.academically.data.entities.ScheduleEntity
-import com.example.academically.data.entities.ScheduleTimeEntity
-import com.example.academically.data.entities.ScheduleWithTimes
+import com.example.academically.data.model.Schedule
+import com.example.academically.data.model.ScheduleTime
+import com.example.academically.data.local.entities.ScheduleEntity
+import com.example.academically.data.local.entities.ScheduleTimeEntity
+import com.example.academically.data.local.entities.ScheduleWithTimes
 import com.example.academically.uiAcademicAlly.calendar.DaysOfWeek
 import java.time.LocalTime
 
@@ -53,3 +53,5 @@ private fun ScheduleTimeEntity.toDomainModel(): ScheduleTime {
         hourEnd = LocalTime.parse(this.hourEnd)
     )
 }
+
+

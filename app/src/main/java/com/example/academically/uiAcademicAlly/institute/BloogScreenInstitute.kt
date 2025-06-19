@@ -1,6 +1,5 @@
 package com.example.academically.uiAcademicAlly.institute
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -56,11 +55,11 @@ import androidx.compose.ui.window.Dialog
 import coil.compose.SubcomposeAsyncImage
 import com.example.academically.R
 import com.example.academically.ViewModel.EventViewModel
-import com.example.academically.data.EventInstitute
-import com.example.academically.data.PersonalEvent
-import com.example.academically.data.PersonalEventType
-import com.example.academically.data.PersonalEventItem
-import com.example.academically.data.PersonalEventNotification
+import com.example.academically.data.model.EventInstitute
+import com.example.academically.data.model.PersonalEvent
+import com.example.academically.data.model.PersonalEventType
+import com.example.academically.data.model.PersonalEventItem
+import com.example.academically.data.model.PersonalEventNotification
 import com.example.academically.data.mappers.getIconByName
 import com.example.academically.uiAcademicAlly.calendar.EventInfoItem
 import com.example.academically.uiAcademicAlly.calendar.formatEventDate

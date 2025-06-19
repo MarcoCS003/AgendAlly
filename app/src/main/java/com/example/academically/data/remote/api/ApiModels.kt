@@ -1,4 +1,4 @@
-package com.example.academically.data.api
+package com.example.academically.data.remote.api
 
 import kotlinx.serialization.Serializable
 

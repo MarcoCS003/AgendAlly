@@ -2,8 +2,8 @@ package com.example.academically.data.repositorty
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import com.example.academically.data.Schedule
-import com.example.academically.data.dao.ScheduleDao
+import com.example.academically.data.local.dao.ScheduleDao
+import com.example.academically.data.model.Schedule
 import com.example.academically.data.mappers.toDomainModel
 import com.example.academically.data.mappers.toEntity
 import kotlinx.coroutines.flow.Flow

@@ -3,9 +3,9 @@ package com.example.academically.ViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.academically.data.api.ApiService
-import com.example.academically.data.api.BlogEventsResponse
-import com.example.academically.data.api.EventInstituteBlog
+import com.example.academically.data.remote.api.ApiService
+import com.example.academically.data.remote.api.BlogEventsResponse
+import com.example.academically.data.remote.api.EventInstituteBlog
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

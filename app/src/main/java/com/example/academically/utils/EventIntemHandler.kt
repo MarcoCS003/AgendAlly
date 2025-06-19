@@ -3,8 +3,8 @@ package com.example.academically.utils
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.example.academically.data.PersonalEventItem
-import com.example.academically.data.EventItemType
+import com.example.academically.data.model.PersonalEventItem
+import com.example.academically.data.model.EventItemType
 
 /**
  * Utilidad para convertir items y manejar eventos personales

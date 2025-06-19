@@ -1,6 +1,5 @@
-package com.example.academically.data
+package com.example.academically.data.model
 import kotlinx.serialization.Serializable
-import java.time.LocalDateTime
 
 @Serializable
 enum class UserRole {

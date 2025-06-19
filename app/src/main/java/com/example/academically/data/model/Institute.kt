@@ -1,4 +1,4 @@
-package com.example.academically.data
+package com.example.academically.data.model
 
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -42,7 +42,7 @@ data class EventInstitute(
     val color: Color,
     val startDate: LocalDate? = null,
     val endDate: LocalDate? = null,
-    val category: PersonalEventType =PersonalEventType.SUBSCRIBED,
+    val category: PersonalEventType = PersonalEventType.SUBSCRIBED,
     val imagePath: String = "",
     val items: List<PersonalEventItem> = emptyList(),
     val notification: PersonalEventNotification? = null,

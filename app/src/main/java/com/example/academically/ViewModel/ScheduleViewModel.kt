@@ -7,8 +7,8 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.academically.data.Schedule
-import com.example.academically.data.ScheduleTime
+import com.example.academically.data.model.Schedule
+import com.example.academically.data.model.ScheduleTime
 import com.example.academically.data.repositorty.ScheduleRepository
 import com.example.academically.uiAcademicAlly.schedule.ViewMode
 import kotlinx.coroutines.flow.MutableStateFlow

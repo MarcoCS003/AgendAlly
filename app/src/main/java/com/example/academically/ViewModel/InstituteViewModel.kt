@@ -5,8 +5,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.academically.data.api.ApiService
-import com.example.academically.data.api.Institute
+import com.example.academically.data.remote.api.ApiService
+import com.example.academically.data.remote.api.Institute
 import kotlinx.coroutines.launch
 
 class InstituteViewModel : ViewModel() {

@@ -5,7 +5,6 @@ package com.example.academically.uiAcademicAlly.calendar
 import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -23,15 +22,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.academically.ViewModel.EventViewModel
-import com.example.academically.data.PersonalEvent
-import com.example.academically.data.PersonalEventType
-import com.example.academically.data.database.AcademicAllyDatabase
+import com.example.academically.data.model.PersonalEvent
+import com.example.academically.data.model.PersonalEventType
+import com.example.academically.data.local.database.AcademicAllyDatabase
 import com.example.academically.data.mappers.getIconByName
 import com.example.academically.data.repository.PersonalEventRepository
 import com.example.academically.ui.theme.ScheduleColorsProvider

@@ -29,9 +29,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.example.academically.ViewModel.InstituteViewModel
-import com.example.academically.data.Career
-import com.example.academically.data.Institute
-import com.example.academically.data.api.Institute as ApiInstitute
+import com.example.academically.data.model.Career
+import com.example.academically.data.model.Institute
+import com.example.academically.data.remote.api.Institute as ApiInstitute
 
 @Composable
 fun InstituteScreenWithAPI(

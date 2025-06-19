@@ -1,4 +1,3 @@
-
 @file:OptIn(ExperimentalMaterial3Api::class)
 package com.example.academically.uiAcademicAlly.settings
 
@@ -35,6 +34,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,22 +50,46 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.academically.data.UserRole
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.academically.ViewModel.AuthViewModel
+import com.example.academically.ViewModel.AuthUiState
+import com.example.academically.data.model.UserRole
 import com.example.academically.ui.theme.AcademicAllyTheme
 
 @Composable
-fun LoginScreen(
+fun LoginScreenWithViewModel(
+    viewModel: AuthViewModel = viewModel(),
     onLoginSuccess: (userRole: UserRole) -> Unit = {},
-    onNavigateToRegister: () -> Unit,
-    onGoogleSignIn: () -> Unit = {},
-    isLoading: Boolean = false,
-    errorMessage: String? = null
+    onNavigateToRegister: () -> Unit = {},
+    onGoogleSignIn: () -> Unit = {}
 ) {
+    // Estados del ViewModel
+    val authUiState by viewModel.authUiState.collectAsState()
+    val loginUiState by viewModel.loginUiState.collectAsState()
+
+    // Estados locales para los campos
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
     var emailError by remember { mutableStateOf("") }
     var passwordError by remember { mutableStateOf("") }
+
+    // Efectos para manejar el estado de autenticación
+    LaunchedEffect(authUiState) {
+        when (authUiState) {
+            is AuthUiState.Authenticated -> {
+                onLoginSuccess((authUiState as AuthUiState.Authenticated).user.role)
+            }
+            else -> { /* No hacer nada */ }
+        }
+    }
+
+    // Efectos para manejar el estado de login
+    LaunchedEffect(loginUiState) {
+        if (loginUiState.isLoginSuccessful) {
+            // El login fue exitoso, el efecto de arriba se encargará de la navegación
+        }
+    }
 
     // Validaciones
     fun validateEmail(): Boolean {
@@ -106,12 +131,143 @@ fun LoginScreen(
         val isPasswordValid = validatePassword()
 
         if (isEmailValid && isPasswordValid) {
-            // Aquí iría la lógica de autenticación real
-            // Por ahora simulamos un login exitoso
+            // Limpiar errores previos
+            viewModel.clearLoginError()
+            // Llamar al ViewModel para hacer login
+            viewModel.loginWithCredentials(email, password)
+        }
+    }
+
+    fun handleGoogleSignIn() {
+        // Por ahora simulamos un token
+        val mockGoogleToken = "mock_google_token_${System.currentTimeMillis()}"
+        viewModel.loginWithGoogle(mockGoogleToken)
+    }
+
+    // Limpiar errores cuando el usuario escribe
+    LaunchedEffect(email) {
+        if (emailError.isNotEmpty()) emailError = ""
+        if (loginUiState.errorMessage != null) viewModel.clearLoginError()
+    }
+
+    LaunchedEffect(password) {
+        if (passwordError.isNotEmpty()) passwordError = ""
+        if (loginUiState.errorMessage != null) viewModel.clearLoginError()
+    }
+
+    LoginScreenContent(
+        email = email,
+        onEmailChange = { email = it },
+        password = password,
+        onPasswordChange = { password = it },
+        isPasswordVisible = isPasswordVisible,
+        onPasswordVisibilityChange = { isPasswordVisible = it },
+        emailError = emailError,
+        passwordError = passwordError,
+        isLoading = loginUiState.isLoading,
+        errorMessage = loginUiState.errorMessage,
+        onLoginClick = { handleLogin() },
+        onGoogleSignInClick = { handleGoogleSignIn() },
+        onNavigateToRegister = onNavigateToRegister
+    )
+}
+
+@Composable
+fun LoginScreen(
+    onNavigateToRegister: () -> Unit,
+    onLoginSuccess: (userRole: UserRole) -> Unit = {},
+    onGoogleSignIn: () -> Unit = {},
+    isLoading: Boolean = false,
+    errorMessage: String? = null
+) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var isPasswordVisible by remember { mutableStateOf(false) }
+    var emailError by remember { mutableStateOf("") }
+    var passwordError by remember { mutableStateOf("") }
+
+    fun validateEmail(): Boolean {
+        return when {
+            email.isBlank() -> {
+                emailError = "El email es obligatorio"
+                false
+            }
+            !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
+                emailError = "Formato de email inválido"
+                false
+            }
+            else -> {
+                emailError = ""
+                true
+            }
+        }
+    }
+
+    fun validatePassword(): Boolean {
+        return when {
+            password.isBlank() -> {
+                passwordError = "La contraseña es obligatoria"
+                false
+            }
+            password.length < 6 -> {
+                passwordError = "La contraseña debe tener al menos 6 caracteres"
+                false
+            }
+            else -> {
+                passwordError = ""
+                true
+            }
+        }
+    }
+
+    fun handleLogin() {
+        val isEmailValid = validateEmail()
+        val isPasswordValid = validatePassword()
+
+        if (isEmailValid && isPasswordValid) {
             onLoginSuccess(UserRole.STUDENT)
         }
     }
 
+    LoginScreenContent(
+        email = email,
+        onEmailChange = {
+            email = it
+            if (emailError.isNotEmpty()) emailError = ""
+        },
+        password = password,
+        onPasswordChange = {
+            password = it
+            if (passwordError.isNotEmpty()) passwordError = ""
+        },
+        isPasswordVisible = isPasswordVisible,
+        onPasswordVisibilityChange = { isPasswordVisible = it },
+        emailError = emailError,
+        passwordError = passwordError,
+        isLoading = isLoading,
+        errorMessage = errorMessage,
+        onLoginClick = { handleLogin() },
+        onGoogleSignInClick = onGoogleSignIn,
+        onNavigateToRegister = onNavigateToRegister
+    )
+}
+
+@Composable
+private fun LoginScreenContent(
+    email: String,
+    onEmailChange: (String) -> Unit,
+    password: String,
+    onPasswordChange: (String) -> Unit,
+    isPasswordVisible: Boolean,
+    onPasswordVisibilityChange: (Boolean) -> Unit,
+    emailError: String,
+    passwordError: String,
+    isLoading: Boolean,
+    errorMessage: String?,
+    onLoginClick: () -> Unit,
+    onGoogleSignInClick: () -> Unit,
+    onNavigateToRegister: () -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -134,10 +290,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(60.dp))
 
-            // Logo y título
-
-            Spacer(modifier = Modifier.height(24.dp))
-
             Text(
                 text = "AgendAlly",
                 style = MaterialTheme.typography.headlineMedium.copy(
@@ -157,7 +309,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Formulario de login
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -180,13 +331,9 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Campo de email
                     OutlinedTextField(
                         value = email,
-                        onValueChange = {
-                            email = it
-                            if (emailError.isNotEmpty()) emailError = ""
-                        },
+                        onValueChange = onEmailChange,
                         label = { Text("Email") },
                         placeholder = { Text("ejemplo@instituto.edu.mx") },
                         modifier = Modifier.fillMaxWidth(),
@@ -200,13 +347,9 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Campo de contraseña
                     OutlinedTextField(
                         value = password,
-                        onValueChange = {
-                            password = it
-                            if (passwordError.isNotEmpty()) passwordError = ""
-                        },
+                        onValueChange = onPasswordChange,
                         label = { Text("Contraseña") },
                         placeholder = { Text("Ingresa tu contraseña") },
                         modifier = Modifier.fillMaxWidth(),
@@ -218,7 +361,7 @@ fun LoginScreen(
                         },
                         trailingIcon = {
                             IconButton(
-                                onClick = { isPasswordVisible = !isPasswordVisible }
+                                onClick = { onPasswordVisibilityChange(!isPasswordVisible) }
                             ) {
                                 Icon(
                                     imageVector = if (isPasswordVisible) {
@@ -243,7 +386,6 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Mensaje de error general
                     errorMessage?.let { message ->
                         Text(
                             text = message,
@@ -256,9 +398,8 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Botón de login
                     Button(
-                        onClick = { handleLogin() },
+                        onClick = onLoginClick,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
@@ -282,7 +423,6 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Divider
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
@@ -298,9 +438,8 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Botón de Google Sign In
                     OutlinedButton(
-                        onClick = { onGoogleSignIn() },
+                        onClick = onGoogleSignInClick,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
@@ -314,8 +453,6 @@ fun LoginScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
-                            // Aquí puedes agregar el ícono de Google si lo tienes
-                            // Icon(...)
                             Text(
                                 text = "Continuar con Google",
                                 fontSize = 16.sp,
@@ -326,7 +463,6 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Link para registro
                     Row(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
@@ -337,7 +473,7 @@ fun LoginScreen(
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
                         TextButton(
-                            onClick = { onNavigateToRegister() },
+                            onClick = onNavigateToRegister,
                             enabled = !isLoading
                         ) {
                             Text(
@@ -351,7 +487,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Footer
             Text(
                 text = "Al iniciar sesión, aceptas nuestros términos y condiciones",
                 style = MaterialTheme.typography.bodySmall,
@@ -368,39 +503,7 @@ fun LoginScreen(
 private fun LoginScreenPreview() {
     AcademicAllyTheme {
         LoginScreen(
-            onLoginSuccess = TODO(),
-            onNavigateToRegister = TODO(),
-            onGoogleSignIn = TODO(),
-            isLoading = TODO(),
-            errorMessage = TODO()
-        )
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-private fun LoginScreenLoadingPreview() {
-    AcademicAllyTheme {
-        LoginScreen(
-            isLoading = true,
-            onLoginSuccess = TODO(),
-            onNavigateToRegister = TODO(),
-            onGoogleSignIn = TODO(),
-            errorMessage = TODO()
-        )
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-private fun LoginScreenErrorPreview() {
-    AcademicAllyTheme {
-        LoginScreen(
-            errorMessage = "Credenciales incorrectas. Verifica tu email y contraseña.",
-            onLoginSuccess = TODO(),
-            onNavigateToRegister = TODO(),
-            onGoogleSignIn = TODO(),
-            isLoading = TODO()
+            onNavigateToRegister = {}
         )
     }
 }

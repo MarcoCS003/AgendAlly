@@ -1,4 +1,4 @@
-package com.example.academically.data.entities
+package com.example.academically.data.local.entities
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
@@ -10,29 +10,27 @@ import androidx.room.PrimaryKey
     tableName = "student_subscriptions",
     foreignKeys = [
         ForeignKey(
-            entity = StudentProfileEntity::class,
+            entity = UserProfileEntity::class,
             parentColumns = ["id"],
-            childColumns = ["student_id"],
+            childColumns = ["user_id"],
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index(value = ["student_id", "channel_id"], unique = true)]
+    indices = [
+        Index(value = ["user_id"]),
+        Index(value = ["channel_id"]),
+        Index(value = ["user_id", "channel_id"], unique = true)
+    ]
 )
 data class StudentSubscriptionEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
 
-    @ColumnInfo(name = "student_id")
-    val studentId: Int = 1, // Referencia al perfil único
+    @ColumnInfo(name = "user_id")
+    val userId: Int = 1,
 
     @ColumnInfo(name = "channel_id")
     val channelId: Int,
-
-    @ColumnInfo(name = "channel_name")
-    val channelName: String,
-
-    @ColumnInfo(name = "organization_name")
-    val organizationName: String,
 
     @ColumnInfo(name = "subscribed_at")
     val subscribedAt: String,
@@ -41,5 +39,8 @@ data class StudentSubscriptionEntity(
     val isActive: Boolean = true,
 
     @ColumnInfo(name = "notifications_enabled")
-    val notificationsEnabled: Boolean = true
+    val notificationsEnabled: Boolean = true,
+
+    @ColumnInfo(name = "synced_at")
+    val syncedAt: String? = null
 )

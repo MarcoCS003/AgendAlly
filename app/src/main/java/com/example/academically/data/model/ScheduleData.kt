@@ -1,4 +1,4 @@
-package com.example.academically.data
+package com.example.academically.data.model
 
 import android.os.Build
 import androidx.annotation.RequiresApi

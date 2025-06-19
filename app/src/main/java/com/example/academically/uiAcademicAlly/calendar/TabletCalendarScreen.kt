@@ -35,9 +35,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.academically.ViewModel.EventViewModel
-import com.example.academically.data.database.AcademicAllyDatabase
+import com.example.academically.data.local.database.AcademicAllyDatabase
 import com.example.academically.data.repository.PersonalEventRepository
-import com.example.academically.data.*
+import com.example.academically.data.model.EventProcessor
+import com.example.academically.data.model.EventShape
+import com.example.academically.data.model.MountAcademicAlly
+import com.example.academically.data.model.PersonalEvent
+import com.example.academically.data.model.ProcessedPersonalEvent
+import com.example.academically.data.model.SystemCalendarProvider
 import com.example.academically.ui.theme.ScheduleColorsProvider
 import java.time.LocalDate
 

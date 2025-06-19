@@ -1,9 +1,9 @@
-package com.example.academically.data.dao
+package com.example.academically.data.local.dao
 
 import androidx.room.*
-import com.example.academically.data.entities.ScheduleEntity
-import com.example.academically.data.entities.ScheduleTimeEntity
-import com.example.academically.data.entities.ScheduleWithTimes
+import com.example.academically.data.local.entities.ScheduleEntity
+import com.example.academically.data.local.entities.ScheduleTimeEntity
+import com.example.academically.data.local.entities.ScheduleWithTimes
 import kotlinx.coroutines.flow.Flow
 
 @Dao

@@ -14,8 +14,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.academically.ViewModel.EventViewModel
-import com.example.academically.data.EventInstitute
-import com.example.academically.data.PersonalEventType
+import com.example.academically.data.model.EventInstitute
+import com.example.academically.data.model.PersonalEventType
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable

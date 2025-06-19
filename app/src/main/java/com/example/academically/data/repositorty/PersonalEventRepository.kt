@@ -1,11 +1,20 @@
 package com.example.academically.data.repository
 
+
+
 import android.os.Build
 import androidx.annotation.RequiresApi
-import com.example.academically.data.*
-import com.example.academically.data.dao.PersonalEventDao
+import com.example.academically.data.local.entities.*
+import com.example.academically.data.local.dao.PersonalEventDao
+import com.example.academically.data.model.EventStatistics
+import com.example.academically.data.model.PersonalEvent
+import com.example.academically.data.model.PersonalEventItem
+import com.example.academically.data.model.PersonalEventType
+
+import com.example.academically.data.model.LocalStudentSubscription
+
 import com.example.academically.data.mappers.*
-import com.example.academically.data.entities.*
+
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
@@ -165,12 +174,12 @@ class PersonalEventRepository(private val personalEventDao: PersonalEventDao) {
 
     // ========== GESTIÓN DE SUSCRIPCIONES LOCALES ==========
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun subscribeToChannel(subscription: LocalStudentSubscription) {
+    suspend fun subscribeToChannel(subscription: com.example.academically.data.mappers.LocalStudentSubscription) {
         val subscriptionEntity = subscription.toEntity()
         personalEventDao.insertSubscription(subscriptionEntity)
     }
 
-    fun getActiveSubscriptions(): Flow<List<LocalStudentSubscription>> =
+    fun getActiveSubscriptions(): Flow<List<com.example.academically.data.mappers.LocalStudentSubscription>> =
         personalEventDao.getActiveSubscriptions()
             .map { subscriptions -> subscriptions.map { it.toLocalDomainModel() } }
 
@@ -184,7 +193,7 @@ class PersonalEventRepository(private val personalEventDao: PersonalEventDao) {
         personalEventDao.updateChannelNotifications(channelId, enabled)
     }
 
-    suspend fun deleteSubscription(subscription: LocalStudentSubscription) {
+    suspend fun deleteSubscription(subscription: com.example.academically.data.mappers.LocalStudentSubscription) {
         val subscriptionEntity = subscription.toEntity()
         personalEventDao.deleteSubscription(subscriptionEntity)
     }

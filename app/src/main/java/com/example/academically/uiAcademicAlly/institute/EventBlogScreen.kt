@@ -24,9 +24,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.academically.ViewModel.BlogEventsViewModel
 import com.example.academically.ViewModel.EventViewModel
-import com.example.academically.data.EventInstitute
-import com.example.academically.data.PersonalEventType
-import com.example.academically.data.api.EventInstituteBlog
+import com.example.academically.data.model.EventInstitute
+import com.example.academically.data.model.PersonalEventType
+import com.example.academically.data.remote.api.EventInstituteBlog
 import com.example.academically.utils.EventItemHandler
 import kotlinx.coroutines.delay
 import java.time.LocalDate

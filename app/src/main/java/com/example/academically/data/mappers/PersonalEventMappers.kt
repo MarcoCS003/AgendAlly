@@ -3,10 +3,45 @@ package com.example.academically.data.mappers
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.ChatBubble
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.FormatListNumberedRtl
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Payment
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.example.academically.data.*
-import com.example.academically.data.entities.*
+import com.example.academically.data.local.entities.EventItemEntity
+import com.example.academically.data.local.entities.PersonalEventEntity
+import com.example.academically.data.local.entities.PersonalEventNotificationEntity
+import com.example.academically.data.local.entities.PersonalEventWithDetails
+import com.example.academically.data.local.entities.StudentSubscriptionEntity
+import com.example.academically.data.local.entities.UserProfileEntity
+import com.example.academically.data.model.PersonalEvent
+import com.example.academically.data.model.PersonalEventItem
+import com.example.academically.data.model.PersonalEventNotification
+import com.example.academically.data.model.PersonalEventType
+import com.example.academically.data.model.User
+import com.example.academically.data.model.UserRole
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.time.LocalDate
@@ -211,81 +246,32 @@ data class LocalStudentSubscription(
     val notificationsEnabled: Boolean = true
 )
 
-@RequiresApi(Build.VERSION_CODES.O)
-fun StudentProfileEntity.toLocalDomainModel(): LocalStudentProfile {
-    return LocalStudentProfile(
-        id = this.id,
-        googleUserId = this.googleUserId,
-        name = this.name,
-        email = this.email,
-        profilePicture = this.profilePicture,
-        notificationsEnabled = this.notificationsEnabled,
-        syncEnabled = this.syncEnabled,
-        lastSyncAt = this.lastSyncAt,
-        createdAt = this.createdAt,
-        updatedAt = this.updatedAt
-    )
-}
+
 
 @RequiresApi(Build.VERSION_CODES.O)
-fun LocalStudentProfile.toEntity(): StudentProfileEntity {
+fun PersonalEvent.toEntity(userId: Int = 1): PersonalEventEntity {
     val now = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
 
-    return StudentProfileEntity(
+    return PersonalEventEntity(
         id = this.id,
-        googleUserId = this.googleUserId,
-        name = this.name,
-        email = this.email,
-        profilePicture = this.profilePicture,
-        notificationsEnabled = this.notificationsEnabled,
-        syncEnabled = this.syncEnabled,
-        lastSyncAt = this.lastSyncAt,
+        title = this.title,
+        shortDescription = this.shortDescription,
+        longDescription = this.longDescription,
+        location = this.location,
+        colorIndex = this.colorIndex,
+        startDate = this.startDate.toString(),
+        endDate = this.endDate.toString(),
+        type = this.type.name,
+        institutionalEventId = this.institutionalEventId,
+        imagePath = this.imagePath,
+        tags = Json.encodeToString(emptyList<String>()),
+        isVisible = this.isVisible,
+        shape = "RoundedFull",
         createdAt = this.createdAt.ifEmpty { now },
         updatedAt = this.updatedAt
     )
 }
 
-fun StudentSubscriptionEntity.toLocalDomainModel(): LocalStudentSubscription {
-    return LocalStudentSubscription(
-        id = this.id,
-        studentId = this.studentId,
-        channelId = this.channelId,
-        channelName = this.channelName,
-        organizationName = this.organizationName,
-        subscribedAt = this.subscribedAt,
-        isActive = this.isActive,
-        notificationsEnabled = this.notificationsEnabled
-    )
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-fun LocalStudentSubscription.toEntity(): StudentSubscriptionEntity {
-    return StudentSubscriptionEntity(
-        id = this.id,
-        studentId = this.studentId,
-        channelId = this.channelId,
-        channelName = this.channelName,
-        organizationName = this.organizationName,
-        subscribedAt = this.subscribedAt,
-        isActive = this.isActive,
-        notificationsEnabled = this.notificationsEnabled
-    )
-}
-
-// ========== UTILIDADES ADICIONALES ==========
-
-fun List<String>.toTagsJson(): String {
-    return Json.encodeToString(this)
-}
-
-fun String.fromTagsJson(): List<String> {
-    return try {
-        if (this.isEmpty() || this == "[]") emptyList()
-        else Json.decodeFromString(this)
-    } catch (e: Exception) {
-        emptyList()
-    }
-}
 
 // ========== HELPERS PARA CREACIÓN DE EVENTOS DE EJEMPLO ==========
 
@@ -320,26 +306,102 @@ fun createSamplePersonalEvent(
     )
 }
 
+
 @RequiresApi(Build.VERSION_CODES.O)
-fun createSamplePersonalEventWithItems(
-    title: String,
-    description: String,
-    startDate: LocalDate,
-    items: List<Pair<String, String>>, // Pair<iconName, text>
-    colorIndex: Int = 0
-): PersonalEvent {
-    val event = createSamplePersonalEvent(title, description, startDate, startDate, colorIndex)
+fun PersonalEventEntity.toDomainModel(): PersonalEvent {
+    return PersonalEvent(
+        id = this.id,
+        title = this.title,
+        shortDescription = this.shortDescription,
+        longDescription = this.longDescription,
+        location = this.location,
+        colorIndex = this.colorIndex,
+        startDate = LocalDate.parse(this.startDate),
+        endDate = LocalDate.parse(this.endDate),
+        type = parsePersonalEventType(this.type),
+        institutionalEventId = this.institutionalEventId,
+        imagePath = this.imagePath,
+        items = emptyList(), // Se carga por separado en PersonalEventWithDetails
+        notification = null, // Se carga por separado en PersonalEventWithDetails
+        isVisible = this.isVisible,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt
+    )
+}
 
-    val eventItems = items.mapIndexed { index, (iconName, text) ->
-        PersonalEventItem(
-            id = index + 1,
-            personalEventId = 0,
-            iconName = iconName,
-            text = text,
-            value = "",
-            isClickable = false
-        )
+fun LocalStudentSubscription.toEntity(): StudentSubscriptionEntity {
+    return StudentSubscriptionEntity(
+        id = this.id,
+        userId = this.studentId,
+        channelId = this.channelId,
+        subscribedAt = this.subscribedAt,
+        isActive = this.isActive,
+        notificationsEnabled = this.notificationsEnabled,
+        syncedAt = null
+    )
+}
+
+fun StudentSubscriptionEntity.toLocalDomainModel(): LocalStudentSubscription {
+    return LocalStudentSubscription(
+        id = this.id,
+        studentId = this.userId,
+        channelId = this.channelId,
+        channelName = "Canal ${this.channelId}", // Placeholder - luego conectar con ChannelDao
+        organizationName = "Organización", // Placeholder - luego conectar con OrganizationDao
+        subscribedAt = this.subscribedAt,
+        isActive = this.isActive,
+        notificationsEnabled = this.notificationsEnabled
+    )
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun LocalStudentProfile.toEntity(): UserProfileEntity {
+    return UserProfileEntity(
+        id = this.id,
+        googleId = this.googleUserId,
+        email = this.email,
+        name = this.name,
+        profilePicture = this.profilePicture,
+        role = UserRole.STUDENT.name,
+        isActive = true,
+        notificationsEnabled = this.notificationsEnabled,
+        syncEnabled = this.syncEnabled,
+        authToken = null,
+        tokenExpiresAt = null,
+        createdAt = this.createdAt,
+        lastLoginAt = null,
+        lastSyncAt = this.lastSyncAt,
+        updatedAt = this.updatedAt
+    )
+}
+
+fun UserProfileEntity.toLocalDomainModel(): LocalStudentProfile {
+    return LocalStudentProfile(
+        id = this.id,
+        googleUserId = this.googleId,
+        name = this.name,
+        email = this.email,
+        profilePicture = this.profilePicture,
+        notificationsEnabled = this.notificationsEnabled,
+        syncEnabled = this.syncEnabled,
+        lastSyncAt = this.lastSyncAt,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt
+    )
+}
+
+fun String.fromTagsJson(): List<String> {
+    return try {
+        Json.decodeFromString<List<String>>(this)
+    } catch (e: Exception) {
+        emptyList()
     }
+}
 
-    return event.copy(items = eventItems)
+fun List<String>.toTagsJson(): String {
+    return try {
+        Json.encodeToString(this)
+    } catch (e: Exception) {
+        "[]"
+    }
 }
