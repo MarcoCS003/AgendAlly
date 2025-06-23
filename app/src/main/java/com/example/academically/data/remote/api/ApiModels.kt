@@ -1,5 +1,6 @@
 package com.example.academically.data.remote.api
 
+import com.google.gson.annotations.SerializedName
 import kotlinx.serialization.Serializable
 
 // Enums para tipos de items (debe coincidir con el backend)
@@ -24,139 +25,155 @@ enum class EventItemType {
     REQUIREMENTS, PRICE, CAPACITY, ORGANIZER
 }
 
-@Serializable
-data class Career(
-    val careerID: Int,
-    val name: String,
-    val acronym: String,
-    val email: String? = null,
-    val phone: String? = null
+// ✅ CANAL (antes Career)
+data class ApiChannel(
+    @SerializedName("id") val id: Int,
+    @SerializedName("organizationId") val organizationId: Int,
+    @SerializedName("organizationName") val organizationName: String,
+    @SerializedName("name") val name: String,
+    @SerializedName("acronym") val acronym: String,
+    @SerializedName("description") val description: String = "",
+    @SerializedName("type") val type: String,
+    @SerializedName("email") val email: String? = null,
+    @SerializedName("phone") val phone: String? = null,
+    @SerializedName("isActive") val isActive: Boolean = true,
+    @SerializedName("createdAt") val createdAt: String,
+    @SerializedName("updatedAt") val updatedAt: String? = null
 )
 
-@Serializable
-data class Institute(
-    val instituteID: Int,
-    val acronym: String,
-    val name: String,
-    val address: String,
-    val email: String,
-    val phone: String,
-    val studentNumber: Int,
-    val teacherNumber: Int,
-    val webSite: String? = null,
-    val facebook: String? = null,
-    val instagram: String? = null,
-    val twitter: String? = null,
-    val youtube: String? = null,
-    val listCareer: List<Career> = emptyList()
+data class ApiOrganization(
+    @SerializedName("organizationID") val organizationID: Int,
+    @SerializedName("acronym") val acronym: String,
+    @SerializedName("name") val name: String,
+    @SerializedName("description") val description: String = "",
+    @SerializedName("address") val address: String,
+    @SerializedName("email") val email: String,
+    @SerializedName("phone") val phone: String,
+    @SerializedName("studentNumber") val studentNumber: Int,
+    @SerializedName("teacherNumber") val teacherNumber: Int,
+    @SerializedName("logoUrl") val logoUrl: String? = null,
+    @SerializedName("webSite") val webSite: String? = null,
+    @SerializedName("facebook") val facebook: String? = null,
+    @SerializedName("instagram") val instagram: String? = null,
+    @SerializedName("twitter") val twitter: String? = null,
+    @SerializedName("youtube") val youtube: String? = null,
+    @SerializedName("linkedin") val linkedin: String? = null,
+    @SerializedName("channels") val channels: List<ApiChannel> = emptyList(),
+    @SerializedName("isActive") val isActive: Boolean = true,
+    @SerializedName("createdAt") val createdAt: String? = null,
+    @SerializedName("updatedAt") val updatedAt: String? = null
 )
 
-@Serializable
-data class InstituteSearchResponse(
-    val institutes: List<Institute>,
-    val total: Int
+
+
+data class OrganizationsResponse(
+    @SerializedName("organizations") val organizations: List<ApiOrganization>, // ✅ CAMBIO
+    @SerializedName("total") val total: Int
 )
 
-// NUEVO: Modelo para items de eventos
-@Serializable
-data class EventInstituteBlogItem(
-    val id: Int,
-    val type: EventItemType,
-    val title: String, // Título descriptivo
-    val value: String, // Valor del item
-    val isClickable: Boolean = false, // Si es clickeable
-    val iconName: String = "" // Nombre del ícono
+data class ChannelsResponse(
+    @SerializedName("channels") val channels: List<ApiChannel>,
+    @SerializedName("total") val total: Int,
+    @SerializedName("organizationId") val organizationId: Int? = null // ✅ CAMBIO
 )
 
-// MODELOS PARA EVENTOS DEL BLOG
-@Serializable
-data class EventInstituteBlog(
-    val id: Int,
-    val title: String,
-    val shortDescription: String = "",
-    val longDescription: String = "",
-    val location: String = "",
-    val startDate: String? = null, // Formato ISO: "2025-11-28"
-    val endDate: String? = null,
-    val category: String = "INSTITUTIONAL", // "INSTITUTIONAL", "CAREER", "PERSONAL"
-    val imagePath: String = "",
-    val instituteId: Int,
-    val items: List<EventInstituteBlogItem> = emptyList(), // NUEVO: Lista de items
-    val createdAt: String? = null,
-    val updatedAt: String? = null,
-    val isActive: Boolean = true
+// ============== AUTENTICACIÓN ==============
+
+data class GoogleAuthRequest(
+    @SerializedName("idToken") val idToken: String,
+    @SerializedName("clientType") val clientType: String = "ANDROID"
 )
 
-@Serializable
-data class BlogEventsResponse(
-    val events: List<EventInstituteBlog>,
-    val total: Int,
-    val instituteInfo: Institute? = null
+data class AuthResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("user") val user: ApiUser? = null,
+    @SerializedName("token") val token: String? = null,
+    @SerializedName("expiresAt") val expiresAt: String? = null,
+    @SerializedName("message") val message: String? = null
 )
 
-// RESPUESTAS DEL BACKEND
-@Serializable
-data class EventsListResponse(
-    val events: List<EventInstituteBlog>,
-    val total: Int
+data class ApiUser(
+    @SerializedName("id") val id: Int,
+    @SerializedName("googleId") val googleId: String,
+    @SerializedName("email") val email: String,
+    @SerializedName("name") val name: String,
+    @SerializedName("profilePicture") val profilePicture: String? = null,
+    @SerializedName("role") val role: String = "STUDENT",
+    @SerializedName("isActive") val isActive: Boolean = true,
+    @SerializedName("notificationsEnabled") val notificationsEnabled: Boolean = true,
+    @SerializedName("syncEnabled") val syncEnabled: Boolean = false,
+    @SerializedName("createdAt") val createdAt: String,
+    @SerializedName("lastLoginAt") val lastLoginAt: String? = null
 )
 
-@Serializable
-data class EventSearchResponse(
-    val events: List<EventInstituteBlog>,
-    val total: Int,
-    val query: String
+// ============== SUSCRIPCIONES ==============
+
+data class ApiUserSubscription(
+    @SerializedName("id") val id: Int,
+    @SerializedName("userId") val userId: Int,
+    @SerializedName("channelId") val channelId: Int,
+    @SerializedName("channelName") val channelName: String,
+    @SerializedName("channelType") val channelType: String,
+    @SerializedName("organizationName") val organizationName: String, // ✅ CAMBIO
+    @SerializedName("subscribedAt") val subscribedAt: String,
+    @SerializedName("isActive") val isActive: Boolean = true,
+    @SerializedName("notificationsEnabled") val notificationsEnabled: Boolean = true,
+    @SerializedName("syncedAt") val syncedAt: String? = null
 )
 
-@Serializable
-data class EventsByCategoryResponse(
-    val events: List<EventInstituteBlog>,
-    val total: Int,
-    val category: String
+data class UserSubscriptionsResponse(
+    @SerializedName("subscriptions") val subscriptions: List<ApiUserSubscription>,
+    @SerializedName("total") val total: Int,
+    @SerializedName("userId") val userId: Int
 )
 
-@Serializable
-data class UpcomingEventsResponse(
-    val events: List<EventInstituteBlog>,
-    val total: Int,
-    val description: String
+data class SubscribeToChannelRequest(
+    @SerializedName("channelId") val channelId: Int,
+    @SerializedName("notificationsEnabled") val notificationsEnabled: Boolean = true
 )
 
-@Serializable
-data class EventStatsResponse(
-    val totalEvents: Long,
-    val eventsByCategory: Map<String, Long>,
-    val lastUpdated: String
+
+
+
+
+
+
+
+// Event Models
+data class ApiEventItem(
+    @SerializedName("id") val id: Int,
+    @SerializedName("type") val type: String,
+    @SerializedName("title") val title: String,
+    @SerializedName("value") val value: String,
+    @SerializedName("isClickable") val isClickable: Boolean = false,
+    @SerializedName("iconName") val iconName: String? = null
 )
 
-@Serializable
-data class MessageResponse(
-    val message: String
+data class ApiEvent(
+    @SerializedName("id") val id: Int,
+    @SerializedName("title") val title: String,
+    @SerializedName("shortDescription") val shortDescription: String = "",
+    @SerializedName("longDescription") val longDescription: String = "",
+    @SerializedName("location") val location: String = "",
+    @SerializedName("startDate") val startDate: String? = null,
+    @SerializedName("endDate") val endDate: String? = null,
+    @SerializedName("category") val category: String = "INSTITUTIONAL",
+    @SerializedName("imagePath") val imagePath: String = "",
+    @SerializedName("channelId") val channelId: Int? = null,
+    @SerializedName("instituteId") val OrganizationId: Int,
+    @SerializedName("items") val items: List<ApiEventItem> = emptyList(),
+    @SerializedName("createdAt") val createdAt: String? = null,
+    @SerializedName("updatedAt") val updatedAt: String? = null,
+    @SerializedName("isActive") val isActive: Boolean = true
 )
 
-@Serializable
-data class ErrorResponse(
-    val error: String
+data class EventsResponse(
+    @SerializedName("events") val events: List<ApiEvent>,
+    @SerializedName("total") val total: Int
 )
 
-// Request para crear evento
-@Serializable
-data class CreateEventRequest(
-    val title: String,
-    val shortDescription: String = "",
-    val longDescription: String = "",
-    val location: String = "",
-    val startDate: String? = null,
-    val endDate: String? = null,
-    val category: String = "INSTITUTIONAL",
-    val imagePath: String = "",
-    val instituteId: Int,
-    val items: List<EventInstituteBlogItem> = emptyList() // NUEVO: Items del evento
-)
-
-// Request para agregar instituto
-@Serializable
-data class AddInstituteRequest(
-    val instituteID: Int,
-    val careerID: Int
+data class SuccessResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String,
+    @SerializedName("data") val data: String? = null
 )

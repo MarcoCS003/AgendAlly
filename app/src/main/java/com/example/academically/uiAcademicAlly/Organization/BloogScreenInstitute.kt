@@ -1,4 +1,4 @@
-package com.example.academically.uiAcademicAlly.institute
+package com.example.academically.uiAcademicAlly.Organization
 
 import android.content.Context
 import android.content.Intent
@@ -55,7 +55,7 @@ import androidx.compose.ui.window.Dialog
 import coil.compose.SubcomposeAsyncImage
 import com.example.academically.R
 import com.example.academically.ViewModel.EventViewModel
-import com.example.academically.data.model.EventInstitute
+import com.example.academically.data.model.EventOrganization
 import com.example.academically.data.model.PersonalEvent
 import com.example.academically.data.model.PersonalEventType
 import com.example.academically.data.model.PersonalEventItem
@@ -149,7 +149,7 @@ private fun EventImage(
 
 @Composable
 fun EventCardBlog(
-    event: EventInstitute,
+    event: EventOrganization,
     modifier: Modifier
 ) {
     Card(
@@ -231,7 +231,7 @@ fun EventCardBlog(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun EventDetailCardBlog(
-    event: EventInstitute,
+    event: EventOrganization,
     onDismiss: () -> Unit = {},
     eventViewModel: EventViewModel? = null
 ) {
@@ -370,7 +370,7 @@ fun EventDetailCardBlog(
 
 
 @RequiresApi(Build.VERSION_CODES.O)
-private fun convertToPersonalEvent(eventInstitute: EventInstitute): PersonalEvent {
+private fun convertToPersonalEvent(eventInstitute: EventOrganization): PersonalEvent {
     val now = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
 
 
@@ -570,7 +570,7 @@ fun CardEventBlogPreview() {
         ) {
             // ===== EJEMPLO CON PERSONALEVENT =====
             EventDetailCardBlog(
-                event = EventInstitute(
+                event = EventOrganization(
                     id = 1,
                     title = "INNOVATECNMN 2025",
                     shortDescription = "Registro para estudiantes líder",
@@ -582,7 +582,7 @@ fun CardEventBlogPreview() {
                     color = Color(0xFF00BCD4),
                     category = PersonalEventType.SUBSCRIBED,
                     items = emptyList(),
-                    instituteId = 1,
+                    organizationId = 1,
                     notification = PersonalEventNotification(
                         id = 1,
                         personalEventId = 0,

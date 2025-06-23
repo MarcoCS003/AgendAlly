@@ -1,4 +1,4 @@
-package com.example.academically.uiAcademicAlly.institute
+package com.example.academically.uiAcademicAlly.Organization
 
 
 import android.os.Build
@@ -14,18 +14,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.academically.ViewModel.EventViewModel
-import com.example.academically.data.model.EventInstitute
+import com.example.academically.data.model.EventOrganization
 import com.example.academically.data.model.PersonalEventType
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TabletEventBlogScreen(
-    events: List<EventInstitute>,
+    events: List<EventOrganization>,
     modifier: Modifier = Modifier,
     eventViewModel: EventViewModel? = null // Añadir parámetro
 ) {
+    // Implementare en otra version adaptabilidad
+    /*
     var selectedTab by remember { mutableStateOf(EventTab.INSTITUTE) }
-    var selectedEvent by remember { mutableStateOf<EventInstitute?>(null) }
+    var selectedEvent by remember { mutableStateOf<EventOrganization?>(null) }
 
     // Filtrar eventos según la pestaña seleccionada
     val filteredEvents = remember(selectedTab, events) {
@@ -77,4 +79,5 @@ fun TabletEventBlogScreen(
             eventViewModel = eventViewModel // Pasar el ViewModel
         )
     }
+    */
 }

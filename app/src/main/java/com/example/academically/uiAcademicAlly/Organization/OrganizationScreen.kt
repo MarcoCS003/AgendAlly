@@ -1,6 +1,7 @@
-package com.example.academically.uiAcademicAlly.institute
+package com.example.academically.uiAcademicAlly.Organization
 
-
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,52 +23,68 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.academically.ViewModel.OrganizationViewModel
+import com.example.academically.data.model.Organization
 
-
-data class Organization(
-    val id: String,
-    val name: String,
-    val shortName: String,
-    val logoColor: Color = Color(0xFFFFD700), // Amarillo por defecto
-    val icon: ImageVector = Icons.Default.School
-)
-
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun OrganizationsScreen(
-    organizations: List<Organization> = getSampleOrganizations(),
-    onOrganizationClick:  (Organization) -> Unit = {},
+    viewModel: OrganizationViewModel,
+    onOrganizationClick: (Organization) -> Unit = {},
     onAddOrganizationClick: () -> Unit = {}
 ) {
+    val organizations = viewModel.organizations
+    val isLoading = viewModel.isLoading
+    val error = viewModel.error
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(vertical = 28.dp ,horizontal = 16.dp)
+            .padding(vertical = 28.dp, horizontal = 16.dp)
     ) {
         // Título
         Text(
             text = "Organizaciones",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
-            color = contentColorFor(
-                if (isSystemInDarkTheme()) {
-                    Color.White
-                }else{
-                    Color.White
-                }
-            ),
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
-        // Grid de organizaciones
+        // Estado de carga
+        if (isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+            return@Column
+        }
+
+        // Estado de error
+        if (error != null) {
+            ErrorSection(
+                error = error,
+                onRetry = {
+                    viewModel.clearError()
+                    viewModel.loadOrganizations()
+                }
+            )
+            return@Column
+        }
+
+        // Lista de organizaciones
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(
-                items = organizations.chunked(2), // Agrupamos de 2 en 2 para el grid
-                key = { chunk -> chunk.map { it.id }.joinToString() }
+                items = organizations.chunked(2),
+                key = { chunk -> chunk.map { it.organizationID }.joinToString() }
             ) { organizationPair ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -103,7 +121,7 @@ fun OrganizationsScreen(
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         AddOrganizationCard(
-                            onClickAddOrganization =  onAddOrganizationClick,
+                            onClickAddOrganization = onAddOrganizationClick,
                             modifier = Modifier.weight(1f)
                         )
                         // Espacio vacío para mantener la alineación
@@ -143,11 +161,11 @@ fun OrganizationCard(
                 modifier = Modifier
                     .size(60.dp)
                     .clip(CircleShape)
-                    .background(organization.logoColor),
+                    .background(getOrganizationColor(organization.organizationID)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = organization.icon,
+                    imageVector = getOrganizationIcon(organization.acronym),
                     contentDescription = organization.name,
                     tint = Color.White,
                     modifier = Modifier.size(32.dp)
@@ -156,11 +174,22 @@ fun OrganizationCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Nombre de la organización
+            // Acrónimo de la organización
             Text(
-                text = organization.shortName,
+                text = organization.acronym,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center
+            )
+
+            // Nombre completo (más pequeño)
+            Text(
+                text = organization.name,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Normal,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                maxLines = 2
             )
         }
     }
@@ -186,48 +215,117 @@ fun AddOrganizationCard(
                 .fillMaxSize()
                 .border(
                     width = 2.dp,
-                    color = Color.Gray.copy(alpha = 0.4f),
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
                     shape = RoundedCornerShape(16.dp)
                 )
                 .padding(16.dp),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Agregar organización",
-                tint = Color.Gray,
-                modifier = Modifier.size(48.dp)
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Agregar organización",
+                    tint = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.size(48.dp)
+                )
+
+                Text(
+                    text = "Agregar\nOrganización",
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
         }
     }
 }
 
-// Función para datos de ejemplo (en el futuro vendrán de la base de datos)
-fun getSampleOrganizations(): List<Organization> {
-    return listOf(
-        Organization(
-            id = "1",
-            name = "Instituto Tecnológico de Puebla",
-            shortName = "ITP",
-            logoColor = Color(0xFFFFD700), // Amarillo
-            icon = Icons.Default.School
+@Composable
+fun ErrorSection(
+    error: String,
+    onRetry: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.Error,
+            contentDescription = "Error",
+            tint = MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(64.dp)
         )
-        // Agregar más organizaciones aquí cuando las tengas
-    )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Error al cargar organizaciones",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.error,
+            textAlign = TextAlign.Center
+        )
+
+        Text(
+            text = error,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 32.dp, vertical = 8.dp)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = onRetry
+        ) {
+            Text("Reintentar")
+        }
+    }
+}
+
+// Funciones de utilidad para colores e iconos
+fun getOrganizationColor(id: Int): Color {
+    return when (id % 5) {
+        0 -> Color(0xFF2196F3) // Azul
+        1 -> Color(0xFF4CAF50) // Verde
+        2 -> Color(0xFFFF9800) // Naranja
+        3 -> Color(0xFF9C27B0) // Púrpura
+        4 -> Color(0xFFF44336) // Rojo
+        else -> Color(0xFF607D8B) // Gris azul
+    }
+}
+
+fun getOrganizationIcon(acronym: String): ImageVector {
+    return when {
+        acronym.contains("TECN", ignoreCase = true) -> Icons.Default.School
+        else -> Icons.Default.School
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun OrganizationsScreenPreview() {
     MaterialTheme {
-        OrganizationsScreen(
-            organizations = getSampleOrganizations(),
-            onOrganizationClick = { org ->
-                println("Clicked on ${org.name}")
-            },
-            onAddOrganizationClick = {
-                println("Add organization clicked")
-            }
+        // Preview con datos simulados
+        val sampleOrganizations = listOf(
+            Organization(
+                organizationID = 1,
+                acronym = "ITP",
+                name = "Instituto Tecnológico de Puebla",
+                address = "Del Tecnológico 420, Puebla",
+                email = "info@puebla.tecnm.mx",
+                phone = "222 229 8810",
+                studentNumber = 6284,
+                teacherNumber = 298
+            )
         )
+
+        // Simular el viewModel para el preview
+        // En el preview real, necesitarías crear un viewModel mock
     }
 }

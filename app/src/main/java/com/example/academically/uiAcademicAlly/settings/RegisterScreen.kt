@@ -2,6 +2,7 @@
 
 package com.academically.ui.screens.auth
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -27,7 +28,7 @@ import com.example.academically.ViewModel.AuthViewModel
 import com.example.academically.ViewModel.AuthUiState
 import com.example.academically.data.model.UserRole
 import com.example.academically.ui.theme.AcademicAllyTheme
-
+@SuppressLint("NewApi")
 @Composable
 fun RegisterScreenWithViewModel(
     viewModel: AuthViewModel = viewModel(),
@@ -144,6 +145,7 @@ fun RegisterScreenWithViewModel(
         }
     }
 
+    @SuppressLint("NewApi")
     fun handleRegister() {
         val isNameValid = validateName()
         val isEmailValid = validateEmail()
@@ -159,6 +161,7 @@ fun RegisterScreenWithViewModel(
         }
     }
 
+    @SuppressLint("NewApi")
     fun handleGoogleSignIn() {
         // Por ahora simulamos un token
         val mockGoogleToken = "mock_google_token_${System.currentTimeMillis()}"

@@ -1,18 +1,20 @@
 package com.example.academically.ViewModel
 
-import android.annotation.SuppressLint
-import com.example.academically.data.repositorty.AuthRepository
-
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.academically.data.remote.api.LoginUseCase
+import com.example.academically.data.repositorty.AuthRepository
 import com.example.academically.data.model.User
-
-import kotlinx.coroutines.flow.*
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// Estados para la UI (compatible con tu estructura)
+// Estados para la UI
 sealed class AuthUiState {
     object Loading : AuthUiState()
     object Unauthenticated : AuthUiState()
@@ -32,12 +34,14 @@ data class RegisterUiState(
     val isRegistrationSuccessful: Boolean = false
 )
 
+@HiltViewModel
 class AuthViewModel @Inject constructor(
+    private val loginUseCase: LoginUseCase,
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    // ✅ CORREGIDO: Tipo explícito para evitar problemas de inferencia
-    private val _authUiState = MutableStateFlow<AuthUiState>(AuthUiState.Loading)
+    // Estados principales
+    private val _authUiState = MutableStateFlow<AuthUiState>(AuthUiState.Unauthenticated)
     val authUiState: StateFlow<AuthUiState> = _authUiState.asStateFlow()
 
     private val _loginUiState = MutableStateFlow(LoginUiState())
@@ -46,111 +50,183 @@ class AuthViewModel @Inject constructor(
     private val _registerUiState = MutableStateFlow(RegisterUiState())
     val registerUiState: StateFlow<RegisterUiState> = _registerUiState.asStateFlow()
 
+    // Para compatibilidad con código existente
+    val authState = authRepository.getAuthState()
+
     init {
         checkAuthenticationStatus()
     }
 
     private fun checkAuthenticationStatus() {
         viewModelScope.launch {
+            _authUiState.value = AuthUiState.Loading
+
             try {
-                authRepository.getCurrentUserProfile().collect { user ->
-                    _authUiState.value = if (user != null) {
-                        AuthUiState.Authenticated(user)
-                    } else {
-                        AuthUiState.Unauthenticated
+                val isLoggedIn = loginUseCase.isUserLoggedIn()
+                if (isLoggedIn) {
+                    // Obtener perfil del usuario desde el repositorio
+                    authRepository.getCurrentUserProfile().collect { user ->
+                        if (user != null) {
+                            _authUiState.value = AuthUiState.Authenticated(user)
+                        } else {
+                            _authUiState.value = AuthUiState.Unauthenticated
+                        }
                     }
+                } else {
+                    _authUiState.value = AuthUiState.Unauthenticated
                 }
             } catch (e: Exception) {
-                _authUiState.value = AuthUiState.Error("Error al verificar autenticación: ${e.message}")
+                _authUiState.value = AuthUiState.Error(e.message ?: "Error desconocido")
             }
         }
     }
 
-    // Iniciar sesión con credenciales
-    @SuppressLint("NewApi")
+    // ============== MÉTODOS DE LOGIN ==============
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun loginWithGoogle(googleToken: String? = null) {
+        viewModelScope.launch {
+            _loginUiState.value = _loginUiState.value.copy(isLoading = true, errorMessage = null)
+            _authUiState.value = AuthUiState.Loading
+
+            val result = if (googleToken != null) {
+                // Aquí se podría implementar login real con Google token
+                loginUseCase.mockLogin() // Por ahora usar mock
+            } else {
+                loginUseCase.loginWithGoogle()
+            }
+
+            if (result.isSuccess) {
+                val user = result.getOrThrow()
+                _authUiState.value = AuthUiState.Authenticated(user)
+                _loginUiState.value = _loginUiState.value.copy(
+                    isLoading = false,
+                    isLoginSuccessful = true,
+                    errorMessage = null
+                )
+            } else {
+                val errorMessage = result.exceptionOrNull()?.message ?: "Error en login con Google"
+                _authUiState.value = AuthUiState.Error(errorMessage)
+                _loginUiState.value = _loginUiState.value.copy(
+                    isLoading = false,
+                    errorMessage = errorMessage,
+                    isLoginSuccessful = false
+                )
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
     fun loginWithCredentials(email: String, password: String) {
         viewModelScope.launch {
             _loginUiState.value = _loginUiState.value.copy(isLoading = true, errorMessage = null)
+            _authUiState.value = AuthUiState.Loading
 
-            authRepository.loginWithCredentials(email, password)
-                .onSuccess { user ->
-                    _loginUiState.value = _loginUiState.value.copy(
-                        isLoading = false,
-                        isLoginSuccessful = true
-                    )
-                    _authUiState.value = AuthUiState.Authenticated(user)
-                }
-                .onFailure { exception ->
-                    _loginUiState.value = _loginUiState.value.copy(
-                        isLoading = false,
-                        errorMessage = "Error al iniciar sesión: ${exception.message}"
-                    )
-                }
-        }
-    }
+            // Por ahora, simular login con credenciales usando mock login
+            val result = loginUseCase.mockLogin(email)
 
-    // Registrar nuevo usuario
-    @SuppressLint("NewApi")
-    fun registerUser(name: String, email: String, password: String) {
-        viewModelScope.launch {
-            _registerUiState.value = _registerUiState.value.copy(isLoading = true, errorMessage = null)
-
-            authRepository.registerUser(name, email, password)
-                .onSuccess { user ->
-                    _registerUiState.value = _registerUiState.value.copy(
-                        isLoading = false,
-                        isRegistrationSuccessful = true
-                    )
-                    _authUiState.value = AuthUiState.Authenticated(user)
-                }
-                .onFailure { exception ->
-                    _registerUiState.value = _registerUiState.value.copy(
-                        isLoading = false,
-                        errorMessage = "Error al registrar usuario: ${exception.message}"
-                    )
-                }
-        }
-    }
-
-    // Iniciar sesión con Google
-    @SuppressLint("NewApi")
-    fun loginWithGoogle(idToken: String) {
-        viewModelScope.launch {
-            _loginUiState.value = _loginUiState.value.copy(isLoading = true, errorMessage = null)
-
-            authRepository.loginWithGoogle(idToken)
-                .onSuccess { user ->
-                    _loginUiState.value = _loginUiState.value.copy(
-                        isLoading = false,
-                        isLoginSuccessful = true
-                    )
-                    _authUiState.value = AuthUiState.Authenticated(user)
-                }
-                .onFailure { exception ->
-                    _loginUiState.value = _loginUiState.value.copy(
-                        isLoading = false,
-                        errorMessage = "Error al iniciar sesión con Google: ${exception.message}"
-                    )
-                }
-        }
-    }
-
-    // Cerrar sesión
-    @SuppressLint("NewApi")
-    fun logout() {
-        viewModelScope.launch {
-            try {
-                authRepository.logout()
-                _authUiState.value = AuthUiState.Unauthenticated
-                _loginUiState.value = LoginUiState()
-                _registerUiState.value = RegisterUiState()
-            } catch (e: Exception) {
-                _authUiState.value = AuthUiState.Error("Error al cerrar sesión: ${e.message}")
+            if (result.isSuccess) {
+                val user = result.getOrThrow()
+                _authUiState.value = AuthUiState.Authenticated(user)
+                _loginUiState.value = _loginUiState.value.copy(
+                    isLoading = false,
+                    isLoginSuccessful = true,
+                    errorMessage = null
+                )
+            } else {
+                val errorMessage = result.exceptionOrNull()?.message ?: "Credenciales inválidas"
+                _authUiState.value = AuthUiState.Error(errorMessage)
+                _loginUiState.value = _loginUiState.value.copy(
+                    isLoading = false,
+                    errorMessage = errorMessage,
+                    isLoginSuccessful = false
+                )
             }
         }
     }
 
-    // Limpiar errores
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun mockLogin(email: String = "test@estudiante.tecnm.mx") {
+        viewModelScope.launch {
+            _loginUiState.value = _loginUiState.value.copy(isLoading = true, errorMessage = null)
+            _authUiState.value = AuthUiState.Loading
+
+            val result = loginUseCase.mockLogin(email)
+
+            if (result.isSuccess) {
+                val user = result.getOrThrow()
+                _authUiState.value = AuthUiState.Authenticated(user)
+                _loginUiState.value = _loginUiState.value.copy(
+                    isLoading = false,
+                    isLoginSuccessful = true,
+                    errorMessage = null
+                )
+            } else {
+                val errorMessage = result.exceptionOrNull()?.message ?: "Error en login mock"
+                _authUiState.value = AuthUiState.Error(errorMessage)
+                _loginUiState.value = _loginUiState.value.copy(
+                    isLoading = false,
+                    errorMessage = errorMessage,
+                    isLoginSuccessful = false
+                )
+            }
+        }
+    }
+
+    // ============== MÉTODOS DE REGISTRO ==============
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun registerUser(name: String, email: String, password: String) {
+        viewModelScope.launch {
+            _registerUiState.value = _registerUiState.value.copy(isLoading = true, errorMessage = null)
+            _authUiState.value = AuthUiState.Loading
+
+            // Por ahora, simular registro exitoso con mock login
+            val result = loginUseCase.mockLogin(email)
+
+            if (result.isSuccess) {
+                val user = result.getOrThrow()
+                _authUiState.value = AuthUiState.Authenticated(user)
+                _registerUiState.value = _registerUiState.value.copy(
+                    isLoading = false,
+                    isRegistrationSuccessful = true,
+                    errorMessage = null
+                )
+            } else {
+                val errorMessage = result.exceptionOrNull()?.message ?: "Error en registro"
+                _authUiState.value = AuthUiState.Error(errorMessage)
+                _registerUiState.value = _registerUiState.value.copy(
+                    isLoading = false,
+                    errorMessage = errorMessage,
+                    isRegistrationSuccessful = false
+                )
+            }
+        }
+    }
+
+    // ============== MÉTODO DE LOGOUT ==============
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun logout() {
+        viewModelScope.launch {
+            _authUiState.value = AuthUiState.Loading
+
+            val result = loginUseCase.logout()
+
+            _authUiState.value = AuthUiState.Unauthenticated
+            _loginUiState.value = LoginUiState()
+            _registerUiState.value = RegisterUiState()
+        }
+    }
+
+    // ============== MÉTODOS DE LIMPIEZA DE ERRORES ==============
+
+    fun clearError() {
+        if (_authUiState.value is AuthUiState.Error) {
+            _authUiState.value = AuthUiState.Unauthenticated
+        }
+    }
+
     fun clearLoginError() {
         _loginUiState.value = _loginUiState.value.copy(errorMessage = null)
     }
@@ -159,30 +235,10 @@ class AuthViewModel @Inject constructor(
         _registerUiState.value = _registerUiState.value.copy(errorMessage = null)
     }
 
-    // Actualizar configuraciones
-    fun updateNotificationsEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            authRepository.updateNotificationsEnabled(enabled)
-        }
-    }
+    // ============== MÉTODOS DE COMPATIBILIDAD (DEPRECADOS) ==============
 
-    @SuppressLint("NewApi")
-    fun updateSyncSettings(enabled: Boolean) {
-        viewModelScope.launch {
-            authRepository.updateSyncSettings(enabled)
-        }
-    }
-}
-
-// Factory para crear el ViewModel sin Hilt
-class AuthViewModelFactory(
-    private val authRepository: AuthRepository
-) : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(AuthViewModel::class.java)) {
-            return AuthViewModel(authRepository) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun loginWithGoogle() {
+        loginWithGoogle(googleToken = null)
     }
 }

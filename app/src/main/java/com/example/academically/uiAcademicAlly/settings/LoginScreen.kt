@@ -1,6 +1,7 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 package com.example.academically.uiAcademicAlly.settings
 
+import android.annotation.SuppressLint
 import android.util.Patterns
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -55,7 +56,7 @@ import com.example.academically.ViewModel.AuthViewModel
 import com.example.academically.ViewModel.AuthUiState
 import com.example.academically.data.model.UserRole
 import com.example.academically.ui.theme.AcademicAllyTheme
-
+@SuppressLint("NewApi")
 @Composable
 fun LoginScreenWithViewModel(
     viewModel: AuthViewModel = viewModel(),
@@ -126,6 +127,7 @@ fun LoginScreenWithViewModel(
         }
     }
 
+    @SuppressLint("NewApi")
     fun handleLogin() {
         val isEmailValid = validateEmail()
         val isPasswordValid = validatePassword()
@@ -138,6 +140,7 @@ fun LoginScreenWithViewModel(
         }
     }
 
+    @SuppressLint("NewApi")
     fun handleGoogleSignIn() {
         // Por ahora simulamos un token
         val mockGoogleToken = "mock_google_token_${System.currentTimeMillis()}"
@@ -147,7 +150,7 @@ fun LoginScreenWithViewModel(
     // Limpiar errores cuando el usuario escribe
     LaunchedEffect(email) {
         if (emailError.isNotEmpty()) emailError = ""
-        if (loginUiState.errorMessage != null) viewModel.clearLoginError()
+        if (loginUiState.errorMessage != null) viewModel
     }
 
     LaunchedEffect(password) {

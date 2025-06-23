@@ -31,6 +31,12 @@ data class OrganizationEntity(
     @ColumnInfo(name = "phone")
     val phone: String,
 
+    @ColumnInfo(name = "student_number")
+    val studentNumber: Int,
+
+    @ColumnInfo(name = "teacher_number")
+    val teacherNumber: Int,
+
     @ColumnInfo(name = "website")
     val website: String? = null,
 

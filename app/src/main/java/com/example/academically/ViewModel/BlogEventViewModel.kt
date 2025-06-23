@@ -1,24 +1,28 @@
 package com.example.academically.ViewModel
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.academically.data.remote.api.ApiService
-import com.example.academically.data.remote.api.BlogEventsResponse
-import com.example.academically.data.remote.api.EventInstituteBlog
+import com.example.academically.data.repositorty.IntegratedRepository
+import com.example.academically.data.model.EventOrganization
+import com.example.academically.data.model.PersonalEventType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import android.util.Log
+import com.example.academically.data.model.Organization
 
+@RequiresApi(Build.VERSION_CODES.O)
 class BlogEventsViewModel(
-    private val apiService: ApiService
+    private val integratedRepository: IntegratedRepository
 ) : ViewModel() {
 
-    // Estados del ViewModel
-    private val _events = MutableStateFlow<List<EventInstituteBlog>>(emptyList())
-    val events: StateFlow<List<EventInstituteBlog>> = _events.asStateFlow()
+    // Estados del ViewModel - usando EventOrganization que es el modelo de UI
+    private val _events = MutableStateFlow<List<EventOrganization>>(emptyList())
+    val events: StateFlow<List<EventOrganization>> = _events.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -26,8 +30,8 @@ class BlogEventsViewModel(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
-    private val _selectedInstitute = MutableStateFlow<Int?>(null)
-    val selectedInstitute: StateFlow<Int?> = _selectedInstitute.asStateFlow()
+    private val _selectedOrganizationId = MutableStateFlow<Int?>(null)
+    val selectedOrganizationId: StateFlow<Int?> = _selectedOrganizationId.asStateFlow()
 
     init {
         // Cargar todos los eventos al inicializar
@@ -35,7 +39,7 @@ class BlogEventsViewModel(
     }
 
     /**
-     * Cargar todos los eventos del blog
+     * Cargar todos los eventos institucionales del servidor
      */
     fun loadAllEvents() {
         viewModelScope.launch {
@@ -43,19 +47,22 @@ class BlogEventsViewModel(
             _errorMessage.value = null
 
             try {
-                Log.d("BlogEventsViewModel", "🚀 Cargando todos los eventos...")
+                Log.d("BlogEventsViewModel", "🚀 Cargando todos los eventos institucionales...")
 
-                apiService.getAllBlogEvents().fold(
-                    onSuccess = { eventsList ->
-                        _events.value = eventsList
-                        _selectedInstitute.value = null
-                        Log.d("BlogEventsViewModel", "✅ Eventos cargados: ${eventsList.size}")
-                    },
-                    onFailure = { exception ->
-                        _errorMessage.value = "Error al cargar eventos: ${exception.message}"
-                        Log.e("BlogEventsViewModel", "❌ Error cargando eventos", exception)
-                    }
-                )
+                val result = integratedRepository.getInstitutionalEvents()
+
+                if (result.isSuccess) {
+                    val institutionalEvents = result.getOrThrow()
+                    // Convertir EventInstitute a EventOrganization para la UI
+                    val uiEvents = institutionalEvents
+                    _events.value = uiEvents
+                    _selectedOrganizationId.value = null
+                    Log.d("BlogEventsViewModel", "✅ Eventos cargados: ${uiEvents.size}")
+                } else {
+                    val errorMsg = "Error al cargar eventos: ${result.exceptionOrNull()?.message}"
+                    _errorMessage.value = errorMsg
+                    Log.e("BlogEventsViewModel", "❌ $errorMsg")
+                }
             } catch (e: Exception) {
                 _errorMessage.value = "Error inesperado: ${e.message}"
                 Log.e("BlogEventsViewModel", "❌ Error inesperado", e)
@@ -66,27 +73,29 @@ class BlogEventsViewModel(
     }
 
     /**
-     * Cargar eventos de un instituto específico
+     * Cargar eventos de una organización específica
      */
-    fun loadEventsByInstitute(instituteId: Int) {
+    fun loadEventsByOrganization(organizationId: Int) {
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
 
             try {
-                Log.d("BlogEventsViewModel", "🏢 Cargando eventos del instituto $instituteId...")
+                Log.d("BlogEventsViewModel", "🏢 Cargando eventos de la organización $organizationId...")
 
-                apiService.getEventsByInstitute(instituteId).fold(
-                    onSuccess = { response ->
-                        _events.value = response.events
-                        _selectedInstitute.value = instituteId
-                        Log.d("BlogEventsViewModel", "✅ Eventos del instituto cargados: ${response.events.size}")
-                    },
-                    onFailure = { exception ->
-                        _errorMessage.value = "Error al cargar eventos del instituto: ${exception.message}"
-                        Log.e("BlogEventsViewModel", "❌ Error cargando eventos del instituto", exception)
-                    }
-                )
+                val result = integratedRepository.getEventsByOrganization(organizationId)
+
+                if (result.isSuccess) {
+                    val institutionalEvents = result.getOrThrow()
+                    val uiEvents = institutionalEvents
+                    _events.value = uiEvents
+                    _selectedOrganizationId.value = organizationId
+                    Log.d("BlogEventsViewModel", "✅ Eventos de la organización cargados: ${uiEvents.size}")
+                } else {
+                    val errorMsg = "Error al cargar eventos de la organización: ${result.exceptionOrNull()?.message}"
+                    _errorMessage.value = errorMsg
+                    Log.e("BlogEventsViewModel", "❌ $errorMsg")
+                }
             } catch (e: Exception) {
                 _errorMessage.value = "Error inesperado: ${e.message}"
                 Log.e("BlogEventsViewModel", "❌ Error inesperado", e)
@@ -112,17 +121,19 @@ class BlogEventsViewModel(
             try {
                 Log.d("BlogEventsViewModel", "🔍 Buscando eventos: '$query'")
 
-                apiService.searchEvents(query).fold(
-                    onSuccess = { eventsList ->
-                        _events.value = eventsList
-                        _selectedInstitute.value = null
-                        Log.d("BlogEventsViewModel", "✅ Búsqueda completada: ${eventsList.size} resultados")
-                    },
-                    onFailure = { exception ->
-                        _errorMessage.value = "Error en búsqueda: ${exception.message}"
-                        Log.e("BlogEventsViewModel", "❌ Error en búsqueda", exception)
-                    }
-                )
+                val result = integratedRepository.searchEvents(query)
+
+                if (result.isSuccess) {
+                    val institutionalEvents = result.getOrThrow()
+                    val uiEvents = institutionalEvents
+                    _events.value = uiEvents
+                    _selectedOrganizationId.value = null
+                    Log.d("BlogEventsViewModel", "✅ Búsqueda completada: ${uiEvents.size} resultados")
+                } else {
+                    val errorMsg = "Error en búsqueda: ${result.exceptionOrNull()?.message}"
+                    _errorMessage.value = errorMsg
+                    Log.e("BlogEventsViewModel", "❌ $errorMsg")
+                }
             } catch (e: Exception) {
                 _errorMessage.value = "Error inesperado en búsqueda: ${e.message}"
                 Log.e("BlogEventsViewModel", "❌ Error inesperado en búsqueda", e)
@@ -133,21 +144,20 @@ class BlogEventsViewModel(
     }
 
     /**
-     * Filtrar eventos por categoría
+     * Filtrar eventos por categoría (mantenido para compatibilidad)
      */
     fun filterByCategory(category: String) {
         val currentEvents = _events.value
         if (currentEvents.isEmpty()) {
-            // Si no hay eventos cargados, cargar todos primero
             loadAllEvents()
             return
         }
 
         val filteredEvents = when (category.uppercase()) {
             "ALL" -> currentEvents
-            "INSTITUTIONAL" -> currentEvents.filter { it.category == "INSTITUTIONAL" }
-            "CAREER" -> currentEvents.filter { it.category == "CAREER" }
-            "PERSONAL" -> currentEvents.filter { it.category == "PERSONAL" }
+            "INSTITUTIONAL" -> currentEvents.filter { it.category == PersonalEventType.SUBSCRIBED }
+            "CAREER" -> currentEvents.filter { it.category == PersonalEventType.SUBSCRIBED }
+            "DEPARTMENT" -> currentEvents.filter { it.category == PersonalEventType.SUBSCRIBED }
             else -> currentEvents
         }
 
@@ -158,25 +168,30 @@ class BlogEventsViewModel(
     /**
      * Obtener evento específico por ID
      */
-    fun getEventById(eventId: Int, onResult: (EventInstituteBlog?) -> Unit) {
-        viewModelScope.launch {
-            try {
-                Log.d("BlogEventsViewModel", "📄 Obteniendo evento $eventId...")
+    fun getEventById(eventId: Int, onResult: (EventOrganization?) -> Unit) {
+        // Buscar primero en los eventos ya cargados
+        val existingEvent = _events.value.find { it.id == eventId }
+        if (existingEvent != null) {
+            Log.d("BlogEventsViewModel", "✅ Evento encontrado en caché: ${existingEvent.title}")
+            onResult(existingEvent)
+            return
+        }
 
-                apiService.getEventById(eventId).fold(
-                    onSuccess = { event ->
-                        Log.d("BlogEventsViewModel", "✅ Evento obtenido: ${event.title}")
-                        onResult(event)
-                    },
-                    onFailure = { exception ->
-                        Log.e("BlogEventsViewModel", "❌ Error obteniendo evento", exception)
-                        onResult(null)
-                    }
-                )
-            } catch (e: Exception) {
-                Log.e("BlogEventsViewModel", "❌ Error inesperado obteniendo evento", e)
-                onResult(null)
-            }
+        // Si no está en caché, podríamos implementar una búsqueda específica
+        // Por ahora, retornar null
+        Log.w("BlogEventsViewModel", "⚠️ Evento $eventId no encontrado en caché")
+        onResult(null)
+    }
+
+    /**
+     * Refrescar eventos (pull to refresh)
+     */
+    fun refreshEvents() {
+        val currentOrganizationId = _selectedOrganizationId.value
+        if (currentOrganizationId != null) {
+            loadEventsByOrganization(currentOrganizationId)
+        } else {
+            loadAllEvents()
         }
     }
 
@@ -188,30 +203,35 @@ class BlogEventsViewModel(
     }
 
     /**
-     * Refrescar eventos (pull to refresh)
+     * Filtrar eventos por suscripciones del usuario
      */
-    fun refreshEvents() {
-        val currentInstitute = _selectedInstitute.value
-        if (currentInstitute != null) {
-            loadEventsByInstitute(currentInstitute)
-        } else {
-            loadAllEvents()
+    fun filterEventsBySubscriptions(subscribedChannelIds: List<Int>) {
+        viewModelScope.launch {
+            try {
+                // TODO: Implementar filtrado por canales suscritos
+                // Esto requiere que los eventos tengan información del channelId
+                Log.d("BlogEventsViewModel", "🔗 Filtrando por suscripciones: $subscribedChannelIds")
+
+                // Por ahora, mantener eventos actuales
+                // En el futuro, filtrar por channelId cuando esté disponible en EventOrganization
+
+            } catch (e: Exception) {
+                Log.e("BlogEventsViewModel", "❌ Error filtrando por suscripciones", e)
+            }
         }
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        apiService.close()
-    }
 
-    // Factory para crear el ViewModel
-    class Factory(private val apiService: ApiService) : ViewModelProvider.Factory {
+    // Factory para crear el ViewModel con IntegratedRepository
+    class Factory(
+        private val integratedRepository: IntegratedRepository
+    ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(BlogEventsViewModel::class.java)) {
-                return BlogEventsViewModel(apiService) as T
+                return BlogEventsViewModel(integratedRepository) as T
             }
-            throw IllegalArgumentException("Unknown ViewModel class")
+            throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
     }
 }

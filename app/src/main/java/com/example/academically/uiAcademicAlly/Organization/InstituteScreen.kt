@@ -1,5 +1,7 @@
-package com.example.academically.uiAcademicAlly.institute
+package com.example.academically.uiAcademicAlly.Organization
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,18 +11,12 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -28,58 +24,59 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.example.academically.ViewModel.InstituteViewModel
-import com.example.academically.data.model.Career
-import com.example.academically.data.model.Institute
-import com.example.academically.data.remote.api.Institute as ApiInstitute
+import com.example.academically.ViewModel.OrganizationViewModel
+import com.example.academically.data.model.Organization
+import com.example.academically.data.mappers.ChannelDomain
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun InstituteScreenWithAPI(
-    viewModel: InstituteViewModel,
-    onInstituteAndCareerSelected: (Institute, Career) -> Unit
+fun OrganizationScreen(
+    viewModel: OrganizationViewModel,
+    onOrganizationAndChannelSelected: (Organization, ChannelDomain) -> Unit
 ) {
     // Estados para controlar el flujo de selección
-    var selectedInstitute by remember { mutableStateOf<Institute?>(null) }
-    var showCareerSelection by remember { mutableStateOf(false) }
+    var selectedOrganization by remember { mutableStateOf<Organization?>(null) }
+    var showChannelSelection by remember { mutableStateOf(false) }
 
     // Pantalla principal
-    InstituteSearchScreenWithAPI(
+    OrganizationSearchScreen(
         viewModel = viewModel,
-        onInstituteSelected = { apiInstitute ->
-            val localInstitute = apiInstitute.toLocalInstitute()
-            selectedInstitute = localInstitute
-            showCareerSelection = true
+        onOrganizationSelected = { organization ->
+            selectedOrganization = organization
+            viewModel.selectOrganization(organization.organizationID)
+            showChannelSelection = true
         }
     )
 
-    // Mostrar diálogo de selección de carrera si corresponde
-    if (showCareerSelection && selectedInstitute != null) {
-        CareerSelectionDialogImproved(
-            institute = selectedInstitute!!,
+    // Mostrar diálogo de selección de canal si corresponde
+    if (showChannelSelection && selectedOrganization != null) {
+        ChannelSelectionDialog(
+            organization = selectedOrganization!!,
+            channels = viewModel.channels,
+            isLoading = viewModel.isLoading,
             onDismiss = {
-                showCareerSelection = false
-                selectedInstitute = null
+                showChannelSelection = false
+                selectedOrganization = null
             },
-            onCareerSelected = { career ->
-                onInstituteAndCareerSelected(selectedInstitute!!, career)
-                showCareerSelection = false
-                selectedInstitute = null
+            onChannelSelected = { channel ->
+                onOrganizationAndChannelSelected(selectedOrganization!!, channel)
+                showChannelSelection = false
+                selectedOrganization = null
             }
         )
     }
 }
 
 @Composable
-fun CareerSelectionDialogImproved(
-    institute: Institute,
+fun ChannelSelectionDialog(
+    organization: Organization,
+    channels: List<ChannelDomain>,
+    isLoading: Boolean,
     onDismiss: () -> Unit,
-    onCareerSelected: (Career) -> Unit
+    onChannelSelected: (ChannelDomain) -> Unit
 ) {
-    // Las carreras ahora vienen directamente del instituto
-    val careers = institute.listCareer
-
-    // Estado para la carrera seleccionada
-    var selectedCareer by remember { mutableStateOf<Career?>(null) }
+    // Estado para el canal seleccionado
+    var selectedChannel by remember { mutableStateOf<ChannelDomain?>(null) }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -96,22 +93,48 @@ fun CareerSelectionDialogImproved(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Selecciona tu carrera",
+                    text = "Selecciona un canal",
                     style = MaterialTheme.typography.titleLarge
+                )
+
+                Text(
+                    text = organization.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                if (careers.isEmpty()) {
-                    // Mostrar mensaje si no hay carreras disponibles
-                    NoCareerAvailableMessage()
-                } else {
-                    // Componente mejorado de dropdown
-                    CareerDropdown(
-                        careers = careers,
-                        selectedCareer = selectedCareer,
-                        onCareerSelected = { selectedCareer = it }
-                    )
+                when {
+                    isLoading -> {
+                        // Mostrar indicador de carga
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                CircularProgressIndicator()
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text("Cargando canales...")
+                            }
+                        }
+                    }
+
+                    channels.isEmpty() -> {
+                        // Mostrar mensaje si no hay canales disponibles
+                        NoChannelsAvailableMessage()
+                    }
+
+                    else -> {
+                        // Componente de dropdown para canales
+                        ChannelDropdown(
+                            channels = channels,
+                            selectedChannel = selectedChannel,
+                            onChannelSelected = { selectedChannel = it }
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -127,11 +150,11 @@ fun CareerSelectionDialogImproved(
 
                     Button(
                         onClick = {
-                            selectedCareer?.let { onCareerSelected(it) }
+                            selectedChannel?.let { onChannelSelected(it) }
                         },
-                        enabled = selectedCareer != null
+                        enabled = selectedChannel != null && !isLoading
                     ) {
-                        Text("Agregar")
+                        Text("Seleccionar")
                     }
                 }
             }
@@ -139,28 +162,22 @@ fun CareerSelectionDialogImproved(
     }
 }
 
-
 @Composable
-fun CareerDropdown(
-    careers: List<Career>,
-    selectedCareer: Career?,
-    onCareerSelected: (Career) -> Unit,
+fun ChannelDropdown(
+    channels: List<ChannelDomain>,
+    selectedChannel: ChannelDomain?,
+    onChannelSelected: (ChannelDomain) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var textFieldBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
 
     Box(modifier = modifier) {
         OutlinedTextField(
-            value = selectedCareer?.name ?: "",
+            value = selectedChannel?.name ?: "",
             onValueChange = { },
-            modifier = Modifier
-                .fillMaxWidth()
-                .onGloballyPositioned { coordinates ->
-                    textFieldBounds = coordinates.boundsInWindow()
-                },
+            modifier = Modifier.fillMaxWidth(),
             readOnly = true,
-            label = { Text("Selecciona una carrera") },
+            label = { Text("Selecciona un canal") },
             trailingIcon = {
                 Icon(
                     imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
@@ -170,15 +187,15 @@ fun CareerDropdown(
             }
         )
 
-        // Área invisible para hacer clic que expande/contrae el dropdown
+        // Área invisible para hacer clic
         Box(
             modifier = Modifier
                 .matchParentSize()
                 .clickable { expanded = !expanded }
         )
 
-        // Popup personalizado que se despliega desde arriba
-        if (expanded && careers.isNotEmpty()) {
+        // Popup con la lista de canales
+        if (expanded && channels.isNotEmpty()) {
             Popup(
                 onDismissRequest = { expanded = false },
                 properties = PopupProperties(focusable = true)
@@ -192,19 +209,14 @@ fun CareerDropdown(
                     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
                     LazyColumn {
-                        items(careers) { career ->
-                            DropdownMenuItem(
-                                text = { Text(career.name) },
+                        items(channels) { channel ->
+                            ChannelDropdownItem(
+                                channel = channel,
+                                isSelected = channel.id == selectedChannel?.id,
                                 onClick = {
-                                    onCareerSelected(career)
+                                    onChannelSelected(channel)
                                     expanded = false
-                                },
-                                colors = MenuDefaults.itemColors(
-                                    textColor = if (career.careerID == selectedCareer?.careerID)
-                                        MaterialTheme.colorScheme.primary
-                                    else
-                                        MaterialTheme.colorScheme.onSurface
-                                )
+                                }
                             )
                         }
                     }
@@ -214,9 +226,42 @@ fun CareerDropdown(
     }
 }
 
+@Composable
+fun ChannelDropdownItem(
+    channel: ChannelDomain,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    DropdownMenuItem(
+        text = {
+            Column {
+                Text(
+                    text = channel.name,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                )
+                Text(
+                    text = "${getChannelTypeDisplayName(channel.type)} • ${channel.organizationName}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        onClick = onClick,
+        leadingIcon = {
+            Icon(
+                imageVector = getChannelTypeIcon(channel.type),
+                contentDescription = null,
+                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        },
+        colors = MenuDefaults.itemColors(
+            textColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+        )
+    )
+}
 
 @Composable
-fun NoCareerAvailableMessage() {
+fun NoChannelsAvailableMessage() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -233,7 +278,7 @@ fun NoCareerAvailableMessage() {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "No hay carreras disponibles para este instituto",
+            text = "No hay canales disponibles para esta organización",
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.bodyLarge
         )
@@ -241,7 +286,7 @@ fun NoCareerAvailableMessage() {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Por favor, selecciona otro instituto o contacta al administrador",
+            text = "Por favor, selecciona otra organización o contacta al administrador",
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.alpha(0.7f)
@@ -249,11 +294,11 @@ fun NoCareerAvailableMessage() {
     }
 }
 
-
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun InstituteSearchScreenWithAPI(
-    viewModel: InstituteViewModel,
-    onInstituteSelected: (ApiInstitute) -> Unit
+fun OrganizationSearchScreen(
+    viewModel: OrganizationViewModel,
+    onOrganizationSelected: (Organization) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -289,11 +334,11 @@ fun InstituteSearchScreenWithAPI(
         // Barra de búsqueda
         OutlinedTextField(
             value = viewModel.searchQuery,
-            onValueChange = { viewModel.searchInstitutes(it) },
+            onValueChange = { viewModel.searchOrganizations(it) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
-            placeholder = { Text("Buscar Instituto o Universidad") },
+            placeholder = { Text("Buscar Organización o Universidad") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
             shape = RoundedCornerShape(4.dp),
             singleLine = true
@@ -313,14 +358,14 @@ fun InstituteSearchScreenWithAPI(
                     CircularProgressIndicator()
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Cargando institutos...",
+                        text = "Cargando organizaciones...",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }
         }
 
-        // Grid de institutos
+        // Grid de organizaciones
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             contentPadding = PaddingValues(8.dp),
@@ -328,10 +373,10 @@ fun InstituteSearchScreenWithAPI(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.weight(1f)
         ) {
-            items(viewModel.institutes) { institute ->
-                InstituteCardAPI(
-                    institute = institute,
-                    onClick = { onInstituteSelected(institute) }
+            items(viewModel.organizations) { organization ->
+                OrganizationCard(
+                    organization = organization,
+                    onClick = { onOrganizationSelected(organization) }
                 )
             }
         }
@@ -342,25 +387,25 @@ fun InstituteSearchScreenWithAPI(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (viewModel.institutes.isEmpty() && viewModel.searchQuery.isNotBlank()) {
+                if (viewModel.organizations.isEmpty() && viewModel.searchQuery.isNotBlank()) {
                     Text(
-                        text = "No se encontraron institutos para '${viewModel.searchQuery}'",
+                        text = "No se encontraron organizaciones para '${viewModel.searchQuery}'",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(16.dp)
                     )
                 }
 
                 TextButton(
-                    onClick = { viewModel.loadInstitutes() }
+                    onClick = { viewModel.loadOrganizations() }
                 ) {
                     Icon(Icons.Default.Refresh, contentDescription = "Recargar")
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Recargar desde servidor")
                 }
 
-                // Mostrar total de institutos
+                // Mostrar total de organizaciones
                 Text(
-                    text = "${viewModel.institutes.size} institutos disponibles",
+                    text = "${viewModel.organizations.size} organizaciones disponibles",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -370,14 +415,14 @@ fun InstituteSearchScreenWithAPI(
 }
 
 @Composable
-fun InstituteCardAPI(
-    institute: ApiInstitute,
+fun OrganizationCard(
+    organization: Organization,
     onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(100.dp),
+            .height(120.dp),
         onClick = onClick,
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -391,7 +436,7 @@ fun InstituteCardAPI(
         ) {
             // Acrónimo
             Text(
-                text = institute.acronym,
+                text = organization.acronym,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
                 color = MaterialTheme.colorScheme.primary
@@ -401,47 +446,40 @@ fun InstituteCardAPI(
 
             // Nombre completo (truncado)
             Text(
-                text = institute.name,
+                text = organization.name,
                 style = MaterialTheme.typography.bodySmall,
                 maxLines = 2,
-                fontSize = 10.sp
+                fontSize = 10.sp,
+                textAlign = TextAlign.Center
             )
+
+            Spacer(modifier = Modifier.height(2.dp))
 
             // Número de estudiantes
             Text(
-                text = "${institute.studentNumber} estudiantes",
+                text = "${organization.studentNumber} estudiantes",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 9.sp
+            )
+
+            // Número de canales disponibles
+            Text(
+                text = "${organization.channels.size} canales",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 8.sp
             )
         }
     }
 }
 
-// Función de conversión (reutilizada)
-fun ApiInstitute.toLocalInstitute(): Institute {
-    return Institute(
-        instituteID = this.instituteID,
-        acronym = this.acronym,
-        name = this.name,
-        address = this.address,
-        email = this.email,
-        phone = this.phone,
-        studentNumber = this.studentNumber,
-        teacherNumber = this.teacherNumber,
-        webSite = this.webSite,
-        facebook = this.facebook,
-        instagram = this.instagram,
-        twitter = this.twitter,
-        youtube = this.youtube,
-        listCareer = this.listCareer.map { apiCareer ->
-            Career(
-                careerID = apiCareer.careerID,
-                name = apiCareer.name,
-                acronym = apiCareer.acronym,
-                email = apiCareer.email,
-                phone = apiCareer.phone
-            )
-        }
-    )
+// Funciones auxiliares para tipos de canal
+fun getChannelTypeDisplayName(type: String): String {
+    return when (type.uppercase()) {
+        "CAREER" -> "Carrera"
+        "DEPARTMENT" -> "Departamento"
+        "ADMINISTRATIVE" -> "Administrativo"
+        else -> "Canal"
+    }
 }
