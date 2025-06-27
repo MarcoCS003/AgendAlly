@@ -4,7 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.academically.data.EventItem
-import com.example.academically.data.api.EventInstituteBlogItem
+import com.example.academically.data.api.EventItemBlog
 import com.example.academically.data.api.EventItemType
 
 /**
@@ -15,7 +15,7 @@ object EventItemHandler {
     /**
      * Convierte un EventItemBlog (de la API) a EventItem (local)
      */
-    fun convertToLocalEventItem(apiItem: EventInstituteBlogItem): EventItem {
+    fun convertToLocalEventItem(apiItem: EventItemBlog ): EventItem {
         return EventItem(
             id = apiItem.id,
             type = apiItem.type,

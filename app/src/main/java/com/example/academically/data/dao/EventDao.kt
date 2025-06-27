@@ -47,7 +47,7 @@ interface EventDao {
         event: EventEntity,
         items: List<EventItemEntity>,
         notification: EventNotificationEntity?
-    ) {
+    ) : Unit {
         val eventId = insertEvent(event).toInt()
 
         val itemsWithEventId = items.map { it.copy(eventId = eventId) }
@@ -65,7 +65,7 @@ interface EventDao {
         event: EventEntity,
         items: List<EventItemEntity>,
         notification: EventNotificationEntity?
-    ) {
+    ) : Unit {
         updateEvent(event)
 
         // Eliminar items y notificación actuales

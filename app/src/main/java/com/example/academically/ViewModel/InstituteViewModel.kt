@@ -6,14 +6,14 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.academically.data.api.ApiService
-import com.example.academically.data.api.Institute
+import com.example.academically.data.api.Organization
 import kotlinx.coroutines.launch
 
 class InstituteViewModel : ViewModel() {
 
     private val apiService = ApiService()
 
-    var institutes by mutableStateOf<List<Institute>>(emptyList())
+    var institutes by mutableStateOf<List<Organization>>(emptyList())
         private set
 
     var isLoading by mutableStateOf(false)
@@ -36,7 +36,7 @@ class InstituteViewModel : ViewModel() {
 
             try {
                 // Llamada simple sin Result wrapper
-                val result = apiService.getAllInstitutes()
+                val result = apiService.getAllOrganizations()
                 val institutesList = result.getOrNull()
 
                 if (institutesList != null) {
@@ -74,10 +74,10 @@ class InstituteViewModel : ViewModel() {
         error = null
     }
 
-    private fun getFallbackInstitutes(): List<Institute> {
+    private fun getFallbackInstitutes(): List<Organization> {
         return listOf(
-            Institute(
-                instituteID = 1,
+            Organization(
+                organizationID = 1,
                 acronym = "ITP",
                 name = "Instituto Tecnológico de Puebla",
                 address = "Del Tecnológico 420, Puebla",

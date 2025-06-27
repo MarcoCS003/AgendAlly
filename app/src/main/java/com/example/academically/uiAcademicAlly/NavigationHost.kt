@@ -29,7 +29,6 @@ import com.example.academically.uiAcademicAlly.calendar.EditEventScreenWithViewM
 import com.example.academically.uiAcademicAlly.calendar.TabletCalendarScreen
 import com.example.academically.uiAcademicAlly.institute.EventBlogScreen
 import com.example.academically.uiAcademicAlly.institute.EventBlogScreenWithAPI
-import com.example.academically.uiAcademicAlly.institute.InstituteScreenWithAPI
 import com.example.academically.uiAcademicAlly.institute.OrganizationsScreen
 import com.example.academically.uiAcademicAlly.institute.TabletEventBlogScreen
 import com.example.academically.uiAcademicAlly.schedule.AddScheduleActivityScreenWithViewModel
@@ -134,7 +133,7 @@ fun NavigationHost(
             )
         }
 
-        composable(NavigationItemContent.AddOrganization.ruta) {
+        /*composable(NavigationItemContent.AddOrganization.ruta) {
             // Lista mutable para institutos y carreras seleccionados
             val selectedInstitutesWithCareers = remember {
                 mutableStateListOf<Pair<Institute, Career>>()
@@ -153,7 +152,7 @@ fun NavigationHost(
                     navController.navigateUp()
                 }
             )
-        }
+        }*/
 
 
         composable(NavigationItemContent.BlogOrganization.ruta) {

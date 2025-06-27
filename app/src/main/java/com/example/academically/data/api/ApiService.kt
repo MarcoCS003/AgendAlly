@@ -32,157 +32,235 @@ class ApiService {
 
     private val baseUrl = "http://192.168.100.2:8080/api"
 
-    // ================== INSTITUTOS ==================
-    suspend fun getAllInstitutes(): Result<List<Institute>> {
+    // ================== ORGANIZACIONES ==================
+    suspend fun getAllOrganizations(): Result<List<Organization>> {
         return try {
-            Log.d("ApiService", "🚀 Obteniendo todos los institutos")
+            Log.d("ApiService", "🚀 Obteniendo todas las organizaciones")
 
-            val response: HttpResponse = client.get("$baseUrl/institutes")
+            val response: HttpResponse = client.get("$baseUrl/organizations")
             val responseText = response.bodyAsText()
 
             Log.d("ApiService", "📄 Status: ${response.status}")
             Log.d("ApiService", "📄 JSON recibido (primeros 500 chars): ${responseText.take(500)}")
 
-            val institutes: List<Institute> = json.decodeFromString(responseText)
+            val organizations: List<Organization> = json.decodeFromString(responseText)
 
-            Log.d("ApiService", "✅ Institutos obtenidos: ${institutes.size}")
-            Result.success(institutes)
+            Log.d("ApiService", "✅ Organizaciones obtenidas: ${organizations.size}")
+            Result.success(organizations)
 
         } catch (e: Exception) {
-            Log.e("ApiService", "❌ Error obteniendo institutos", e)
+            Log.e("ApiService", "❌ Error obteniendo organizaciones", e)
             Result.failure(e)
         }
     }
 
-    suspend fun searchInstitutes(query: String): Result<InstituteSearchResponse> {
+    suspend fun searchOrganizations(query: String): Result<OrganizationSearchResponse> {
         return try {
-            val response: InstituteSearchResponse = client.get("$baseUrl/institutes/search") {
+            val response: OrganizationSearchResponse = client.get("$baseUrl/organizations/search") {
                 parameter("q", query)
             }.body()
 
             Log.i("ApiService", "✅ Búsqueda completada: ${response.total} resultados")
             Result.success(response)
         } catch (e: Exception) {
-            Log.e("ApiService", "❌ Error buscando institutos", e)
+            Log.e("ApiService", "❌ Error buscando organizaciones", e)
             Result.failure(e)
         }
     }
 
-    suspend fun getInstituteById(id: Int): Result<Institute> {
+    suspend fun getOrganizationById(id: Int): Result<Organization> {
         return try {
-            val institute: Institute = client.get("$baseUrl/institutes/$id").body()
-            Result.success(institute)
+            val organization: Organization = client.get("$baseUrl/organizations/$id").body()
+            Log.i("ApiService", "✅ Organización obtenida: ${organization.name}")
+            Result.success(organization)
         } catch (e: Exception) {
-            Log.e("ApiService", "❌ Error obteniendo instituto por ID", e)
+            Log.e("ApiService", "❌ Error obteniendo organización por ID: $id", e)
             Result.failure(e)
         }
     }
 
-    // ================== EVENTOS DEL BLOG ==================
-
-    /**
-     * Obtener todos los eventos del blog
-     */
-    suspend fun getAllBlogEvents(): Result<List<EventInstituteBlog>> {
+    suspend fun getOrganizationStats(): Result<Map<String, Any>> {
         return try {
-            Log.d("ApiService", "🚀 Obteniendo todos los eventos del blog")
-
-            val response: HttpResponse = client.get("$baseUrl/events")
-            val responseText = response.bodyAsText()
-
-            Log.d("ApiService", "📄 Status: ${response.status}")
-            Log.d("ApiService", "📄 Eventos JSON: ${responseText.take(300)}")
-
-            val eventsResponse: EventsListResponse = json.decodeFromString(responseText)
-
-            Log.d("ApiService", "✅ Eventos obtenidos: ${eventsResponse.events.size}")
-            Result.success(eventsResponse.events)
-
+            val stats: Map<String, Any> = client.get("$baseUrl/organizations/stats").body()
+            Log.i("ApiService", "✅ Estadísticas obtenidas")
+            Result.success(stats)
         } catch (e: Exception) {
-            Log.e("ApiService", "❌ Error obteniendo eventos del blog", e)
+            Log.e("ApiService", "❌ Error obteniendo estadísticas", e)
             Result.failure(e)
         }
     }
 
-    /**
-     * Obtener eventos por instituto
-     */
-    suspend fun getEventsByInstitute(instituteId: Int): Result<BlogEventsResponse> {
+    // ================== CANALES ==================
+    suspend fun getAllChannels(): Result<List<Channel>> {
         return try {
-            Log.d("ApiService", "🏢 Obteniendo eventos del instituto $instituteId")
+            val response: ChannelsResponse = client.get("$baseUrl/channels").body()
+            Log.i("ApiService", "✅ Canales obtenidos: ${response.total}")
+            Result.success(response.channels)
+        } catch (e: Exception) {
+            Log.e("ApiService", "❌ Error obteniendo canales", e)
+            Result.failure(e)
+        }
+    }
 
-            val response: BlogEventsResponse = client.get("$baseUrl/institutes/$instituteId/events").body()
+    suspend fun getChannelsByOrganization(organizationId: Int): Result<List<Channel>> {
+        return try {
+            val response: ChannelsResponse = client.get("$baseUrl/channels") {
+                parameter("organizationId", organizationId)
+            }.body()
+            Log.i("ApiService", "✅ Canales por organización obtenidos: ${response.total}")
+            Result.success(response.channels)
+        } catch (e: Exception) {
+            Log.e("ApiService", "❌ Error obteniendo canales por organización", e)
+            Result.failure(e)
+        }
+    }
 
-            Log.d("ApiService", "✅ Eventos del instituto obtenidos: ${response.events.size}")
+    // ================== EVENTOS ==================
+    suspend fun getAllEvents(): Result<List<EventInstituteBlog>> {
+        return try {
+            val response: BlogEventsResponse = client.get("$baseUrl/events").body()
+            Log.i("ApiService", "✅ Eventos obtenidos: ${response.total}")
+            Result.success(response.events)
+        } catch (e: Exception) {
+            Log.e("ApiService", "❌ Error obteniendo eventos", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getEventsByOrganization(organizationId: Int): Result<BlogEventsResponse> {
+        return try {
+            val response: BlogEventsResponse = client.get("$baseUrl/events/organization/$organizationId").body()
+            Log.i("ApiService", "✅ Eventos por organización obtenidos: ${response.total}")
             Result.success(response)
-
         } catch (e: Exception) {
-            Log.e("ApiService", "❌ Error obteniendo eventos del instituto", e)
+            Log.e("ApiService", "❌ Error obteniendo eventos por organización", e)
             Result.failure(e)
         }
     }
 
-    /**
-     * Obtener evento específico por ID
-     */
-    suspend fun getEventById(eventId: Int): Result<EventInstituteBlog> {
+    suspend fun getEventsByChannel(channelId: Int): Result<List<EventInstituteBlog>> {
         return try {
-            val event: EventInstituteBlog = client.get("$baseUrl/events/$eventId").body()
-            Log.d("ApiService", "✅ Evento obtenido: ${event.title}")
-            Result.success(event)
+            val response: BlogEventsResponse = client.get("$baseUrl/events/channel/$channelId").body()
+            Log.i("ApiService", "✅ Eventos por canal obtenidos: ${response.total}")
+            Result.success(response.events)
         } catch (e: Exception) {
-            Log.e("ApiService", "❌ Error obteniendo evento por ID", e)
+            Log.e("ApiService", "❌ Error obteniendo eventos por canal", e)
             Result.failure(e)
         }
     }
 
-    /**
-     * Buscar eventos por título o descripción
-     */
-    suspend fun searchEvents(query: String): Result<List<EventInstituteBlog>> {
+    suspend fun searchEvents(query: String): Result<EventSearchResponse> {
         return try {
             val response: EventSearchResponse = client.get("$baseUrl/events/search") {
                 parameter("q", query)
             }.body()
-
-            Log.i("ApiService", "✅ Búsqueda de eventos completada: ${response.events.size} resultados")
-            Result.success(response.events)
+            Log.i("ApiService", "✅ Búsqueda de eventos completada: ${response.total} resultados")
+            Result.success(response)
         } catch (e: Exception) {
             Log.e("ApiService", "❌ Error buscando eventos", e)
             Result.failure(e)
         }
     }
 
-    /**
-     * Crear nuevo evento (para administradores)
-     */
-    suspend fun createEvent(request: CreateEventRequest): Result<EventInstituteBlog> {
+    suspend fun getUpcomingEvents(): Result<UpcomingEventsResponse> {
         return try {
-            val event: EventInstituteBlog = client.post("$baseUrl/events") {
+            val response: UpcomingEventsResponse = client.get("$baseUrl/events/upcoming").body()
+            Log.i("ApiService", "✅ Eventos próximos obtenidos: ${response.total}")
+            Result.success(response)
+        } catch (e: Exception) {
+            Log.e("ApiService", "❌ Error obteniendo eventos próximos", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getEventsByCategory(category: String): Result<EventsByCategoryResponse> {
+        return try {
+            val response: EventsByCategoryResponse = client.get("$baseUrl/events/category/$category").body()
+            Log.i("ApiService", "✅ Eventos por categoría obtenidos: ${response.total}")
+            Result.success(response)
+        } catch (e: Exception) {
+            Log.e("ApiService", "❌ Error obteniendo eventos por categoría", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun subscribeToChannel(
+        channelId: Int,
+        authToken: String,
+        notificationsEnabled: Boolean = true
+    ): Result<SuccessResponse> {
+        return try {
+            val request = SubscribeToChannelRequest(channelId, notificationsEnabled)
+            val response: SuccessResponse = client.post("$baseUrl/subscriptions") {
+                header("Authorization", "Bearer $authToken")
+                header("X-Client-Type", "ANDROID_STUDENT")
                 contentType(ContentType.Application.Json)
                 setBody(request)
             }.body()
 
-            Log.i("ApiService", "✅ Evento creado: ${event.title}")
-            Result.success(event)
-        } catch (e: Exception) {
-            Log.e("ApiService", "❌ Error creando evento", e)
-            Result.failure(e)
-        }
-    }
-
-    // ================== UTILIDADES ==================
-
-    suspend fun healthCheck(): Result<String> {
-        return try {
-            val response: String = client.get("$baseUrl/../health").body()
-            Log.i("ApiService", "✅ Health check OK")
+            Log.i("ApiService", "✅ Suscripción exitosa al canal $channelId")
             Result.success(response)
         } catch (e: Exception) {
-            Log.e("ApiService", "❌ Health check failed", e)
+            Log.e("ApiService", "❌ Error suscribiéndose al canal", e)
             Result.failure(e)
         }
     }
+
+    suspend fun getUserSubscriptions(authToken: String): Result<UserSubscriptionsResponse> {
+        return try {
+            val response: UserSubscriptionsResponse = client.get("$baseUrl/subscriptions") {
+                header("Authorization", "Bearer $authToken")
+                header("X-Client-Type", "ANDROID_STUDENT")
+            }.body()
+
+            Log.i("ApiService", "✅ Suscripciones obtenidas: ${response.total}")
+            Result.success(response)
+        } catch (e: Exception) {
+            Log.e("ApiService", "❌ Error obteniendo suscripciones", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun unsubscribeFromChannel(
+        channelId: Int,
+        authToken: String
+    ): Result<SuccessResponse> {
+        return try {
+            val response: SuccessResponse = client.delete("$baseUrl/subscriptions/$channelId") {
+                header("Authorization", "Bearer $authToken")
+                header("X-Client-Type", "ANDROID_STUDENT")
+            }.body()
+
+            Log.i("ApiService", "✅ Desuscripción exitosa del canal $channelId")
+            Result.success(response)
+        } catch (e: Exception) {
+            Log.e("ApiService", "❌ Error desuscribiéndose del canal", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateSubscriptionNotifications(
+        channelId: Int,
+        authToken: String,
+        notificationsEnabled: Boolean
+    ): Result<SuccessResponse> {
+        return try {
+            val request = UpdateSubscriptionRequest(notificationsEnabled)
+            val response: SuccessResponse = client.put("$baseUrl/subscriptions/$channelId") {
+                header("Authorization", "Bearer $authToken")
+                header("X-Client-Type", "ANDROID_STUDENT")
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }.body()
+
+            Log.i("ApiService", "✅ Notificaciones actualizadas para canal $channelId")
+            Result.success(response)
+        } catch (e: Exception) {
+            Log.e("ApiService", "❌ Error actualizando notificaciones", e)
+            Result.failure(e)
+        }
+    }
+
 
     fun close() {
         client.close()

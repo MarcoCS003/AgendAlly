@@ -31,8 +31,7 @@ import androidx.compose.ui.window.PopupProperties
 import com.example.academically.ViewModel.InstituteViewModel
 import com.example.academically.data.Career
 import com.example.academically.data.Institute
-import com.example.academically.data.api.Institute as ApiInstitute
-
+/*
 @Composable
 fun InstituteScreenWithAPI(
     viewModel: InstituteViewModel,
@@ -444,4 +443,4 @@ fun ApiInstitute.toLocalInstitute(): Institute {
             )
         }
     )
-}
+}*/

@@ -276,7 +276,7 @@ fun EventBlogScreen(
         if (showSearchBar) {
             FloatingActionButton(
                 onClick = {
-                    blogEventsViewModel?.refreshEvents()
+                    blogEventsViewModel?.refreshData()
                 },
                 modifier = Modifier
                     .align(Alignment.BottomStart)
@@ -404,6 +404,6 @@ private fun convertAPIToLocal(apiEvent: EventInstituteBlog): EventInstitute {
         },
         imagePath = apiEvent.imagePath,
         items = localItems, // NUEVO: Items convertidos
-        instituteId = apiEvent.instituteId
+        instituteId = apiEvent.organizationId
     )
 }

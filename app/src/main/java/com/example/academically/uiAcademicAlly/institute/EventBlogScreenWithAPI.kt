@@ -7,13 +7,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.unit.dp
@@ -25,14 +25,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.window.Dialog
 import com.example.academically.ViewModel.BlogEventsViewModel
 import com.example.academically.ViewModel.EventViewModel
-import com.example.academically.data.api.EventInstituteBlog
+// ✅ CORRECCIÓN: Usar los modelos correctos
+import com.example.academically.data.api.*
+import com.example.academically.data.api.Organization
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-enum class EventTabAPI {
-    ALL,
-    INSTITUTE,
-    CAREER
-}
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -43,21 +41,22 @@ fun EventBlogScreenWithAPI(
 ) {
     // Estados del ViewModel
     val events by blogEventsViewModel.events.collectAsStateWithLifecycle()
+    val channels by blogEventsViewModel.channels.collectAsStateWithLifecycle()
+    val organizations by blogEventsViewModel.organizations.collectAsStateWithLifecycle()
     val isLoading by blogEventsViewModel.isLoading.collectAsStateWithLifecycle()
     val errorMessage by blogEventsViewModel.errorMessage.collectAsStateWithLifecycle()
+    val selectedChannelId by blogEventsViewModel.selectedChannelId.collectAsStateWithLifecycle()
 
     // Estados locales
-    var selectedTab by remember { mutableStateOf(EventTabAPI.ALL) }
     var selectedEvent by remember { mutableStateOf<EventInstituteBlog?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var showSearchBar by remember { mutableStateOf(false) }
 
-    // Filtrar eventos según la pestaña seleccionada
-    val filteredEvents = remember(selectedTab, events) {
-        when (selectedTab) {
-            EventTabAPI.ALL -> events
-            EventTabAPI.INSTITUTE -> events.filter { it.category == "INSTITUTIONAL" }
-            EventTabAPI.CAREER -> events.filter { it.category == "CAREER" }
+    // Filtrar eventos según el canal seleccionado
+    val filteredEvents = remember(selectedChannelId, events) {
+        when (selectedChannelId) {
+            null -> events // Mostrar todos los eventos
+            else -> events.filter { it.channelId == selectedChannelId }
         }
     }
 
@@ -85,9 +84,9 @@ fun EventBlogScreenWithAPI(
                     IconButton(onClick = {
                         showSearchBar = false
                         searchQuery = ""
-                        blogEventsViewModel.loadAllEvents()
+                        blogEventsViewModel.clearFilters()
                     }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Limpiar")
+                        Icon(Icons.Default.Clear, contentDescription = "Limpiar")
                     }
                 }
             )
@@ -101,28 +100,51 @@ fun EventBlogScreenWithAPI(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Eventos Académicos",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
+            Column {
+                Text(
+                    text = "Eventos Académicos",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+
+                // Mostrar canal activo
+                selectedChannelId?.let { channelId ->
+                    val channel = blogEventsViewModel.getChannelById(channelId)
+                    val organization = channel?.let {
+                        blogEventsViewModel.getOrganizationById(it.organizationId)
+                    }
+
+                    if (channel != null) {
+                        Text(
+                            text = "${channel.acronym} - ${organization?.acronym ?: ""}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
 
             Row {
                 IconButton(onClick = { showSearchBar = !showSearchBar }) {
                     Icon(Icons.Default.Search, contentDescription = "Buscar")
                 }
-                IconButton(onClick = { blogEventsViewModel.refreshEvents() }) {
+                IconButton(onClick = { blogEventsViewModel.refreshData() }) {
                     Icon(Icons.Default.Refresh, contentDescription = "Actualizar")
                 }
             }
         }
 
-        // Tabs de filtrado
-        EventTabRowAPI(
-            selectedTab = selectedTab,
-            onTabSelected = {
-                selectedTab = it
-                blogEventsViewModel.filterByCategory(it.name)
+        // Filtros por canales (tabs horizontales)
+        ChannelFilterTabs(
+            channels = channels,
+            organizations = organizations,
+            selectedChannelId = selectedChannelId,
+            onChannelSelected = { channelId ->
+                if (channelId != null) {
+                    blogEventsViewModel.loadEventsByChannel(channelId)
+                } else {
+                    blogEventsViewModel.clearFilters()
+                }
             }
         )
 
@@ -172,11 +194,28 @@ fun EventBlogScreenWithAPI(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "No hay eventos disponibles",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Default.EventBusy,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = if (selectedChannelId != null) {
+                                    "No hay eventos en este canal"
+                                } else {
+                                    "No hay eventos disponibles"
+                                },
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            TextButton(onClick = { blogEventsViewModel.clearFilters() }) {
+                                Text("Ver todos los eventos")
+                            }
+                        }
                     }
                 }
 
@@ -190,6 +229,8 @@ fun EventBlogScreenWithAPI(
                         items(filteredEvents) { event ->
                             EventCardBlogAPI(
                                 event = event,
+                                channels = channels,
+                                organizations = organizations,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { selectedEvent = event }
@@ -218,6 +259,8 @@ fun EventBlogScreenWithAPI(
     selectedEvent?.let { event ->
         EventDetailCardBlogAPI(
             event = event,
+            channels = channels,
+            organizations = organizations,
             onDismiss = { selectedEvent = null },
             eventViewModel = eventViewModel
         )
@@ -226,93 +269,96 @@ fun EventBlogScreenWithAPI(
     // Mostrar snackbar de error si hay mensaje
     errorMessage?.let { message ->
         LaunchedEffect(message) {
-            // Aquí podrías mostrar un Snackbar
-            // Por ahora solo limpiamos el error después de un tiempo
-            kotlinx.coroutines.delay(3000)
+            delay(5000)
             blogEventsViewModel.clearError()
         }
     }
 }
 
 @Composable
-fun EventTabRowAPI(
-    selectedTab: EventTabAPI,
-    onTabSelected: (EventTabAPI) -> Unit,
+fun ChannelFilterTabs(
+    channels: List<Channel>,
+    organizations: List<com.example.academically.data.api.Organization>,
+    selectedChannelId: Int?,
+    onChannelSelected: (Int?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
+    Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.Center
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        )
     ) {
-        // Tab Todos
-        TabButtonAPI(
-            text = "Todos",
-            isSelected = selectedTab == EventTabAPI.ALL,
-            onClick = { onTabSelected(EventTabAPI.ALL) },
-            modifier = Modifier.weight(1f)
-        )
+        Column(
+            modifier = Modifier.padding(12.dp)
+        ) {
+            Text(
+                text = "Canales",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
 
-        // Separador
-        Box(
-            modifier = Modifier
-                .width(1.dp)
-                .height(24.dp)
-                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
-                .align(Alignment.CenterVertically)
-        )
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 4.dp)
+            ) {
+                // Opción "Todos"
+                item {
+                    FilterChip(
+                        onClick = { onChannelSelected(null) },
+                        label = { Text("Todos") },
+                        selected = selectedChannelId == null,
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Apps,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    )
+                }
 
-        // Tab Instituto
-        TabButtonAPI(
-            text = "Instituto",
-            isSelected = selectedTab == EventTabAPI.INSTITUTE,
-            onClick = { onTabSelected(EventTabAPI.INSTITUTE) },
-            modifier = Modifier.weight(1f)
-        )
+                // Canales agrupados por organización
+                items(channels.sortedBy { it.acronym }) { channel ->
+                    val organization = organizations.find { it.organizationID == channel.organizationId }
 
-        // Separador
-        Box(
-            modifier = Modifier
-                .width(1.dp)
-                .height(24.dp)
-                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
-                .align(Alignment.CenterVertically)
-        )
-
-        // Tab Carrera
-        TabButtonAPI(
-            text = "Carrera",
-            isSelected = selectedTab == EventTabAPI.CAREER,
-            onClick = { onTabSelected(EventTabAPI.CAREER) },
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-@Composable
-fun TabButtonAPI(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .clickable(onClick = onClick)
-            .padding(8.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            fontSize = 16.sp,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-            color = if (isSelected) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    FilterChip(
+                        onClick = { onChannelSelected(channel.id) },
+                        label = {
+                            Column {
+                                Text(
+                                    text = channel.acronym,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                if (organization != null) {
+                                    Text(
+                                        text = organization.acronym,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        },
+                        selected = selectedChannelId == channel.id,
+                        leadingIcon = {
+                            Icon(
+                                when (channel.type) {
+                                    ChannelType.CAREER -> Icons.Default.School
+                                    ChannelType.DEPARTMENT -> Icons.Default.Business
+                                    ChannelType.ADMINISTRATIVE -> Icons.Default.AccountBox
+                                },
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    )
+                }
             }
-        )
+        }
     }
 }
 
@@ -320,8 +366,18 @@ fun TabButtonAPI(
 @Composable
 fun EventCardBlogAPI(
     event: EventInstituteBlog,
+    channels: List<Channel>,
+    organizations: List<Organization>,
     modifier: Modifier = Modifier
 ) {
+    // Obtener información del canal y organización
+    val channel = event.channelId?.let { channelId ->
+        channels.find { it.id == channelId }
+    }
+    val organization = channel?.let { ch ->
+        organizations.find { it.organizationID == ch.organizationId }
+    }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -337,6 +393,59 @@ fun EventCardBlogAPI(
                 .padding(16.dp)
                 .fillMaxWidth()
         ) {
+            // Encabezado con información del canal
+            if (channel != null && organization != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            when (channel.type) {
+                                ChannelType.CAREER -> Icons.Default.School
+                                ChannelType.DEPARTMENT -> Icons.Default.Business
+                                ChannelType.ADMINISTRATIVE -> Icons.Default.AccountBox
+                            },
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "${channel.acronym}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = when (channel.type) {
+                                ChannelType.CAREER -> MaterialTheme.colorScheme.primaryContainer
+                                ChannelType.DEPARTMENT -> MaterialTheme.colorScheme.secondaryContainer
+                                ChannelType.ADMINISTRATIVE -> MaterialTheme.colorScheme.tertiaryContainer
+                            }
+                        ),
+                        modifier = Modifier.padding(start = 8.dp)
+                    ) {
+                        Text(
+                            text = when (channel.type) {
+                                ChannelType.CAREER -> "Carrera"
+                                ChannelType.DEPARTMENT -> "Depto"
+                                ChannelType.ADMINISTRATIVE -> "Admin"
+                            },
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             // Título del evento
             Text(
                 text = event.title,
@@ -345,43 +454,14 @@ fun EventCardBlogAPI(
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            // Separador
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-            // Información básica
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Descripción corta
+            // Descripción corta
+            if (event.shortDescription.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = event.shortDescription,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-
-                // Categoría
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = when (event.category) {
-                            "INSTITUTIONAL" -> MaterialTheme.colorScheme.primaryContainer
-                            "CAREER" -> MaterialTheme.colorScheme.secondaryContainer
-                            else -> MaterialTheme.colorScheme.tertiaryContainer
-                        }
-                    ),
-                    modifier = Modifier.padding(start = 8.dp)
-                ) {
-                    Text(
-                        text = when (event.category) {
-                            "INSTITUTIONAL" -> "Instituto"
-                            "CAREER" -> "Carrera"
-                            else -> "Personal"
-                        },
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                }
             }
 
             // Fecha y ubicación si existen
@@ -389,27 +469,46 @@ fun EventCardBlogAPI(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 if (event.startDate != null) {
-                    Text(
-                        text = "📅 ${event.startDate}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.CalendarToday,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = event.startDate!!,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
 
                 if (event.location.isNotEmpty()) {
-                    Text(
-                        text = "📍 ${event.location}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.LocationOn,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = event.location,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
             // Descripción larga truncada
             if (event.longDescription.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
-                val truncatedDescription = if (event.longDescription.length > 120) {
-                    event.longDescription.substring(0, 120) + "..."
+                val truncatedDescription = if (event.longDescription.length > 100) {
+                    event.longDescription.substring(0, 100) + "..."
                 } else {
                     event.longDescription
                 }
@@ -418,7 +517,7 @@ fun EventCardBlogAPI(
                     text = truncatedDescription,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 3
+                    maxLines = 2
                 )
             }
         }
@@ -429,10 +528,20 @@ fun EventCardBlogAPI(
 @Composable
 fun EventDetailCardBlogAPI(
     event: EventInstituteBlog,
+    channels: List<Channel>,
+    organizations: List<com.example.academically.data.api.Organization>,
     onDismiss: () -> Unit = {},
     eventViewModel: EventViewModel? = null
 ) {
     var showSuccessMessage by remember { mutableStateOf(false) }
+
+    // Obtener información del canal y organización
+    val channel = event.channelId?.let { channelId ->
+        channels.find { it.id == channelId }
+    }
+    val organization = channel?.let { ch ->
+        organizations.find { it.organizationID == ch.organizationId }
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -449,6 +558,37 @@ fun EventDetailCardBlogAPI(
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
             ) {
+                // Información del canal
+                if (channel != null && organization != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    ) {
+                        Icon(
+                            when (channel.type) {
+                                ChannelType.CAREER -> Icons.Default.School
+                                ChannelType.DEPARTMENT -> Icons.Default.Business
+                                ChannelType.ADMINISTRATIVE -> Icons.Default.AccountBox
+                            },
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                text = channel.name,
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = organization.name,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
                 // Título
                 Text(
                     text = event.title,
@@ -456,7 +596,7 @@ fun EventDetailCardBlogAPI(
                     fontWeight = FontWeight.Bold
                 )
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
                 // Información del evento
                 if (event.longDescription.isNotEmpty()) {
@@ -469,32 +609,29 @@ fun EventDetailCardBlogAPI(
 
                 // Fecha
                 if (event.startDate != null) {
-                    Text(
-                        text = "📅 Fecha: ${event.startDate}${if (event.endDate != null && event.endDate != event.startDate) " - ${event.endDate}" else ""}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.CalendarToday, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Fecha: ${event.startDate}${if (event.endDate != null && event.endDate != event.startDate) " - ${event.endDate}" else ""}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
                 }
 
                 // Ubicación
                 if (event.location.isNotEmpty()) {
-                    Text(
-                        text = "📍 Ubicación: ${event.location}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.LocationOn, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Ubicación: ${event.location}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                    }
                 }
-
-                // Categoría
-                Text(
-                    text = "🏷️ Categoría: ${when (event.category) {
-                        "INSTITUTIONAL" -> "Instituto"
-                        "CAREER" -> "Carrera"
-                        else -> "Personal"
-                    }}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
 
                 // Mensaje de éxito
                 if (showSuccessMessage) {
@@ -519,6 +656,12 @@ fun EventDetailCardBlogAPI(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cerrar")
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
                     Button(
                         onClick = {
                             eventViewModel?.let { viewModel ->
@@ -529,7 +672,7 @@ fun EventDetailCardBlogAPI(
 
                                 // Ocultar mensaje y cerrar después de 2 segundos
                                 kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
-                                    kotlinx.coroutines.delay(2000)
+                                    delay(2000)
                                     showSuccessMessage = false
                                     onDismiss()
                                 }
