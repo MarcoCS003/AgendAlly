@@ -3,8 +3,8 @@ package com.example.academically.uiAcademicAlly
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -12,83 +12,78 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.academically.ViewModel.BlogEventsViewModel
 import com.example.academically.ViewModel.EventViewModel
-import com.example.academically.ViewModel.InstituteViewModel
+import com.example.academically.ViewModel.OrganizationViewModel
 import com.example.academically.ViewModel.ScheduleViewModel
 import com.example.academically.ViewModel.ScheduleViewModelFactory
-import com.example.academically.data.BlogDataExample
-import com.example.academically.data.Career
-import com.example.academically.data.Institute
-import com.example.academically.data.SampleInstituteData
 import com.example.academically.data.api.ApiService
 import com.example.academically.data.database.AcademicAllyDatabase
+import com.example.academically.data.repositorty.OrganizationRepository
 import com.example.academically.data.repository.EventRepository
 import com.example.academically.data.repositorty.ScheduleRepository
+import com.example.academically.uiAcademicAlly.Organization.OrganizationInfoScreen
+import com.example.academically.uiAcademicAlly.Organization.OrganizationsScreen
 import com.example.academically.uiAcademicAlly.calendar.AddEventScreenWithViewModel
 import com.example.academically.uiAcademicAlly.calendar.CalendarScreenWithViewModel
 import com.example.academically.uiAcademicAlly.calendar.EditEventScreenWithViewModel
-import com.example.academically.uiAcademicAlly.calendar.TabletCalendarScreen
-import com.example.academically.uiAcademicAlly.institute.EventBlogScreen
 import com.example.academically.uiAcademicAlly.institute.EventBlogScreenWithAPI
-import com.example.academically.uiAcademicAlly.institute.OrganizationsScreen
-import com.example.academically.uiAcademicAlly.institute.TabletEventBlogScreen
 import com.example.academically.uiAcademicAlly.schedule.AddScheduleActivityScreenWithViewModel
 import com.example.academically.uiAcademicAlly.schedule.EditScheduleActivityScreen
 import com.example.academically.uiAcademicAlly.schedule.ScheduleScreenWithViewModel
-import com.example.academically.uiAcademicAlly.schedule.TabletScheduleScreen
 import com.example.academically.uiAcademicAlly.settings.ConfigurationScreen
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NavigationHost(
     navController: NavHostController,
-    isTablet: Boolean = false
+    isTablet: Boolean = false // Parámetro mantenido por compatibilidad
 ) {
-
     val context = LocalContext.current
     val database = AcademicAllyDatabase.getDatabase(context)
 
-    // Servicios API
-    val apiService = remember { ApiService() }
+    // ========== API SERVICE ==========
+    val apiService = ApiService()
 
-    // Repositorios
+    // ========== REPOSITORIOS ==========
     val scheduleRepository = ScheduleRepository(database.scheduleDao())
     val eventRepository = EventRepository(database.eventDao())
-    // View Models
+    val organizationRepository = OrganizationRepository(database.organizationDao())
+
+    // ========== VIEW MODELS ==========
     val scheduleViewModel: ScheduleViewModel = viewModel(
         factory = ScheduleViewModelFactory(scheduleRepository)
     )
+
     val eventViewModel: EventViewModel = viewModel(
         factory = EventViewModel.Factory(eventRepository)
     )
-    // Institutes ViewModel
-    val instituteViewModel: InstituteViewModel = viewModel()
-    // Blog ViewModel
+
     val blogEventsViewModel: BlogEventsViewModel = viewModel(
         factory = BlogEventsViewModel.Factory(apiService)
     )
 
+    val organizationViewModel: OrganizationViewModel = viewModel(
+        factory = OrganizationViewModel.Factory(organizationRepository)
+    )
 
-    NavHost(navController = navController, startDestination = NavigationItemContent.Calendar.ruta) {
+    NavHost(
+        navController = navController,
+        startDestination = NavigationItemContent.Calendar.ruta
+    ) {
+
+        // ========== CALENDARIO ==========
         composable(NavigationItemContent.Calendar.ruta) {
-            // Modificado para pasar la función de navegación al FAB
-            if (isTablet) {
-                TabletCalendarScreen()
-            } else {
-                CalendarScreenWithViewModel(
-                    viewModel = eventViewModel,
-                    onAddEventClick = {
-                        navController.navigate(NavigationItemContent.AddEvent.ruta)
-                    },
-                    onEditEventClick = { event ->
-                        // Navegar a la pantalla de edición con el ID del evento
-                        navController.navigate("${NavigationItemContent.EditEvent.ruta}/${event.id}")
-                    }
-                )
-            }
+            CalendarScreenWithViewModel(
+                viewModel = eventViewModel,
+                onAddEventClick = {
+                    navController.navigate(NavigationItemContent.AddEvent.ruta)
+                },
+                onEditEventClick = { event ->
+                    navController.navigate("${NavigationItemContent.EditEvent.ruta}/${event.id}")
+                }
+            )
         }
 
         composable(NavigationItemContent.AddEvent.ruta) {
-            // Mantenemos la navegación de vuelta
             AddEventScreenWithViewModel(
                 viewModel = eventViewModel,
                 onBack = {
@@ -97,93 +92,93 @@ fun NavigationHost(
             )
         }
 
-        // Nueva ruta para la edición de eventos
         composable("${NavigationItemContent.EditEvent.ruta}/{eventId}") { backStackEntry ->
             val eventId = backStackEntry.arguments?.getString("eventId")?.toIntOrNull()
-            println("DEBUG: Intentando navegar a edición con ID: $eventId")
             if (eventId != null) {
                 EditEventScreenWithViewModel(
                     eventId = eventId,
-                    viewModel = eventViewModel, // Pasar el viewModel
+                    viewModel = eventViewModel,
                     onBack = {
-                        println("DEBUG: Volviendo de pantalla de edición")
                         navController.navigateUp()
                     }
                 )
             } else {
-                println("DEBUG: ID de evento nulo, volviendo")
                 navController.navigateUp()
             }
         }
 
-        // El resto del código se mantiene igual
-        composable(NavigationItemContent.Settings.ruta) {
-            ConfigurationScreen()
-        }
-
+        // ========== ORGANIZACIONES ==========
         composable(NavigationItemContent.Institute.ruta) {
-
             OrganizationsScreen(
-                onOrganizationClick = {
-                    navController.navigate(NavigationItemContent.BlogOrganization.ruta)
+                onOrganizationClick = { organization ->
+                    // Navegar a eventos de la organización con ID
+                    navController.navigate("${NavigationItemContent.BlogOrganization.ruta}/${organization.organizationID}")
                 },
                 onAddOrganizationClick = {
+                    // Navegar a búsqueda de organizaciones
                     navController.navigate(NavigationItemContent.AddOrganization.ruta)
                 }
             )
         }
 
-        /*composable(NavigationItemContent.AddOrganization.ruta) {
-            // Lista mutable para institutos y carreras seleccionados
-            val selectedInstitutesWithCareers = remember {
-                mutableStateListOf<Pair<Institute, Career>>()
-            }
-
-            InstituteScreenWithAPI(
-                viewModel = instituteViewModel,
-                onInstituteAndCareerSelected = { institute, career ->
-                    // Agregar la pareja de instituto y carrera a la lista de seleccionados
-                    val pair = institute to career
-                    if (!selectedInstitutesWithCareers.contains(pair)) {
-                        selectedInstitutesWithCareers.add(pair)
-                    }
-
-                    // Navegar de vuelta a organizaciones
+        composable(NavigationItemContent.AddOrganization.ruta) {
+            OrganizationInfoScreen(
+                onBackPressed = {
                     navController.navigateUp()
                 }
             )
-        }*/
+        }
 
-
+        // ========== EVENTOS DE ORGANIZACIÓN ==========
         composable(NavigationItemContent.BlogOrganization.ruta) {
-            if (isTablet) {
-                TabletEventBlogScreen(
-                    events = BlogDataExample.getSampleBlog(),
-                    eventViewModel = eventViewModel
-                )
-            } else {
-                // ACTUALIZADO: Usar la versión mejorada con tu diseño original + API
-                EventBlogScreen(
+            // Mostrar todos los eventos (sin filtro de organización)
+            EventBlogScreenWithAPI(
+                blogEventsViewModel = blogEventsViewModel,
+                eventViewModel = eventViewModel,
+                modifier = Modifier
+            )
+        }
+
+        // NUEVA RUTA: Eventos filtrados por organización específica
+        composable("${NavigationItemContent.BlogOrganization.ruta}/{organizationId}") { backStackEntry ->
+            val organizationId = backStackEntry.arguments?.getString("organizationId")?.toIntOrNull()
+
+            if (organizationId != null) {
+                EventBlogScreenWithAPI(
                     blogEventsViewModel = blogEventsViewModel,
-                    eventViewModel = eventViewModel
+                    eventViewModel = eventViewModel,
+                    organizationId = organizationId, // ✅ PASAR ID DE ORGANIZACIÓN
+                    modifier = Modifier
                 )
+
+                // Filtrar eventos por organización al entrar
+                LaunchedEffect(organizationId) {
+                    blogEventsViewModel.filterEventsByOrganization(organizationId)
+                }
+            } else {
+                // ID inválido, volver atrás
+                navController.navigateUp()
             }
         }
 
+        // ========== HORARIOS ==========
         composable(NavigationItemContent.Schedule.ruta) {
-            if (isTablet) {
-                TabletScheduleScreen()
-            } else {
-                ScheduleScreenWithViewModel(
-                    viewModel = scheduleViewModel,
-                    onAddActivity = {
-                        navController.navigate(NavigationItemContent.AddEventSchedule.ruta)
-                    },
-                    onEditActivity = { schedule ->
-                        navController.navigate("${NavigationItemContent.EditEventSchedule.ruta}/${schedule.id}")
-                    }
-                )
-            }
+            ScheduleScreenWithViewModel(
+                viewModel = scheduleViewModel,
+                onAddActivity = {
+                    navController.navigate(NavigationItemContent.AddEventSchedule.ruta)
+                },
+                onEditActivity = { schedule ->
+                    navController.navigate("${NavigationItemContent.EditEventSchedule.ruta}/${schedule.id}")
+                }
+            )
+        }
+
+        composable(NavigationItemContent.AddEventSchedule.ruta) {
+            AddScheduleActivityScreenWithViewModel(
+                viewModel = scheduleViewModel,
+                onNavigateBack = { navController.navigateUp() }
+            )
         }
 
         composable("${NavigationItemContent.EditEventSchedule.ruta}/{scheduleId}") { backStackEntry ->
@@ -199,11 +194,9 @@ fun NavigationHost(
             }
         }
 
-        composable(NavigationItemContent.AddEventSchedule.ruta) {
-            AddScheduleActivityScreenWithViewModel(
-                viewModel = scheduleViewModel,
-                onNavigateBack = { navController.navigateUp() }
-            )
+        // ========== CONFIGURACIÓN ==========
+        composable(NavigationItemContent.Settings.ruta) {
+            ConfigurationScreen()
         }
     }
 }

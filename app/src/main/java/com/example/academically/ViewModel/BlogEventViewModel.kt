@@ -52,27 +52,20 @@ class BlogEventsViewModel(
      */
     fun loadAllEvents() {
         viewModelScope.launch {
-            _isLoading.value = true
-            _errorMessage.value = null
-
             try {
-                Log.d("BlogEventsViewModel", "🚀 Cargando todos los eventos...")
+                _isLoading.value = true
+                _errorMessage.value = null
 
-                apiService.getAllEvents().fold(
-                    onSuccess = { eventsList ->
-                        _events.value = eventsList
-                        _selectedChannelId.value = null
-                        _selectedOrganizationId.value = null
-                        Log.d("BlogEventsViewModel", "✅ Eventos cargados: ${eventsList.size}")
-                    },
-                    onFailure = { exception ->
-                        _errorMessage.value = "Error al cargar eventos: ${exception.message}"
-                        Log.e("BlogEventsViewModel", "❌ Error cargando eventos", exception)
-                    }
-                )
+                val result = apiService.getAllEvents()
+                if (result.isSuccess) {
+                    _events.value = result.getOrNull() ?: emptyList()
+                    Log.d("BlogEventsViewModel", "Eventos cargados: ${_events.value.size}")
+                } else {
+                    throw result.exceptionOrNull() ?: Exception("Error desconocido")
+                }
             } catch (e: Exception) {
-                _errorMessage.value = "Error inesperado: ${e.message}"
-                Log.e("BlogEventsViewModel", "❌ Error inesperado", e)
+                _errorMessage.value = "Error al cargar eventos: ${e.message}"
+                Log.e("BlogEventsViewModel", "Error cargando eventos", e)
             } finally {
                 _isLoading.value = false
             }
@@ -85,72 +78,39 @@ class BlogEventsViewModel(
     fun loadAllChannels() {
         viewModelScope.launch {
             try {
-                Log.d("BlogEventsViewModel", "📺 Cargando todos los canales...")
-
-                apiService.getAllChannels().fold(
-                    onSuccess = { channelsList ->
-                        _channels.value = channelsList
-                        Log.d("BlogEventsViewModel", "✅ Canales cargados: ${channelsList.size}")
-                    },
-                    onFailure = { exception ->
-                        Log.e("BlogEventsViewModel", "❌ Error cargando canales", exception)
-                    }
-                )
+                val result = apiService.getAllChannels()
+                if (result.isSuccess) {
+                    _channels.value = result.getOrNull() ?: emptyList()
+                    Log.d("BlogEventsViewModel", "Canales cargados: ${_channels.value.size}")
+                } else {
+                    Log.e("BlogEventsViewModel", "Error cargando canales: ${result.exceptionOrNull()?.message}")
+                }
             } catch (e: Exception) {
-                Log.e("BlogEventsViewModel", "❌ Error inesperado cargando canales", e)
+                Log.e("BlogEventsViewModel", "Error cargando canales", e)
+                // No mostramos error de canales al usuario ya que no es crítico
             }
         }
     }
 
     /**
-     * Cargar todas las organizaciones disponibles
+     * ✅ NUEVO: Cargar todas las organizaciones disponibles
      */
     fun loadAllOrganizations() {
         viewModelScope.launch {
             try {
-                Log.d("BlogEventsViewModel", "🏢 Cargando todas las organizaciones...")
+                _isLoading.value = true
+                _errorMessage.value = null
 
-                apiService.getAllOrganizations().fold(
-                    onSuccess = { organizationsList ->
-                        _organizations.value = organizationsList
-                        Log.d("BlogEventsViewModel", "✅ Organizaciones cargadas: ${organizationsList.size}")
-                    },
-                    onFailure = { exception ->
-                        Log.e("BlogEventsViewModel", "❌ Error cargando organizaciones", exception)
-                    }
-                )
+                val result = apiService.getAllOrganizations()
+                if (result.isSuccess) {
+                    _organizations.value = result.getOrNull() ?: emptyList()
+                    Log.d("BlogEventsViewModel", "Organizaciones cargadas: ${_organizations.value.size}")
+                } else {
+                    throw result.exceptionOrNull() ?: Exception("Error desconocido")
+                }
             } catch (e: Exception) {
-                Log.e("BlogEventsViewModel", "❌ Error inesperado cargando organizaciones", e)
-            }
-        }
-    }
-
-    /**
-     * Cargar eventos de un canal específico
-     */
-    fun loadEventsByChannel(channelId: Int) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _errorMessage.value = null
-
-            try {
-                Log.d("BlogEventsViewModel", "📺 Cargando eventos del canal $channelId...")
-
-                apiService.getEventsByChannel(channelId).fold(
-                    onSuccess = { eventsList ->
-                        _events.value = eventsList
-                        _selectedChannelId.value = channelId
-                        _selectedOrganizationId.value = null
-                        Log.d("BlogEventsViewModel", "✅ Eventos del canal cargados: ${eventsList.size}")
-                    },
-                    onFailure = { exception ->
-                        _errorMessage.value = "Error al cargar eventos del canal: ${exception.message}"
-                        Log.e("BlogEventsViewModel", "❌ Error cargando eventos del canal", exception)
-                    }
-                )
-            } catch (e: Exception) {
-                _errorMessage.value = "Error inesperado: ${e.message}"
-                Log.e("BlogEventsViewModel", "❌ Error inesperado", e)
+                _errorMessage.value = "Error al cargar organizaciones: ${e.message}"
+                Log.e("BlogEventsViewModel", "Error cargando organizaciones", e)
             } finally {
                 _isLoading.value = false
             }
@@ -158,31 +118,24 @@ class BlogEventsViewModel(
     }
 
     /**
-     * Cargar eventos de una organización específica
+     * ✅ NUEVO: Buscar organizaciones por query
      */
-    fun loadEventsByOrganization(organizationId: Int) {
+    fun searchOrganizations(query: String) {
         viewModelScope.launch {
-            _isLoading.value = true
-            _errorMessage.value = null
-
             try {
-                Log.d("BlogEventsViewModel", "🏢 Cargando eventos de la organización $organizationId...")
+                _isLoading.value = true
+                _errorMessage.value = null
 
-                apiService.getEventsByOrganization(organizationId).fold(
-                    onSuccess = { response ->
-                        _events.value = response.events
-                        _selectedOrganizationId.value = organizationId
-                        _selectedChannelId.value = null
-                        Log.d("BlogEventsViewModel", "✅ Eventos de la organización cargados: ${response.events.size}")
-                    },
-                    onFailure = { exception ->
-                        _errorMessage.value = "Error al cargar eventos de la organización: ${exception.message}"
-                        Log.e("BlogEventsViewModel", "❌ Error cargando eventos de la organización", exception)
-                    }
-                )
+                val result = apiService.searchOrganizations(query)
+                if (result.isSuccess) {
+                    _organizations.value = result.getOrNull() ?: emptyList()
+                    Log.d("BlogEventsViewModel", "Búsqueda '$query': ${_organizations.value.size} resultados")
+                } else {
+                    throw result.exceptionOrNull() ?: Exception("Error desconocido")
+                }
             } catch (e: Exception) {
-                _errorMessage.value = "Error inesperado: ${e.message}"
-                Log.e("BlogEventsViewModel", "❌ Error inesperado", e)
+                _errorMessage.value = "Error en la búsqueda: ${e.message}"
+                Log.e("BlogEventsViewModel", "Error en búsqueda de organizaciones", e)
             } finally {
                 _isLoading.value = false
             }
@@ -190,73 +143,135 @@ class BlogEventsViewModel(
     }
 
     /**
-     * Buscar eventos por término de búsqueda
+     * ✅ NUEVO: Obtener una organización específica por ID
+     */
+    fun getOrganizationById(organizationId: Int) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                _errorMessage.value = null
+
+                val result = apiService.getOrganizationById(organizationId)
+                if (result.isSuccess) {
+                    val organization = result.getOrNull()
+                    if (organization != null) {
+                        // Actualizar la lista con la organización obtenida
+                        val currentList = _organizations.value.toMutableList()
+                        val existingIndex = currentList.indexOfFirst { it.organizationID == organizationId }
+
+                        if (existingIndex != -1) {
+                            currentList[existingIndex] = organization
+                        } else {
+                            currentList.add(organization)
+                        }
+
+                        _organizations.value = currentList
+                        Log.d("BlogEventsViewModel", "Organización $organizationId cargada: ${organization.name}")
+                    }
+                } else {
+                    throw result.exceptionOrNull() ?: Exception("Error desconocido")
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al cargar organización: ${e.message}"
+                Log.e("BlogEventsViewModel", "Error cargando organización $organizationId", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    /**
+     * Buscar eventos por query
      */
     fun searchEvents(query: String) {
-        if (query.isBlank()) {
-            loadAllEvents()
-            return
-        }
-
         viewModelScope.launch {
-            _isLoading.value = true
-            _errorMessage.value = null
-
             try {
-                Log.d("BlogEventsViewModel", "🔍 Buscando eventos: '$query'")
+                _isLoading.value = true
+                _errorMessage.value = null
 
-                apiService.searchEvents(query).fold(
-                    onSuccess = { response ->
-                        _events.value = response.events
-                        _selectedChannelId.value = null
-                        _selectedOrganizationId.value = null
-                        Log.d("BlogEventsViewModel", "✅ Búsqueda completada: ${response.events.size} resultados")
-                    },
-                    onFailure = { exception ->
-                        _errorMessage.value = "Error en búsqueda: ${exception.message}"
-                        Log.e("BlogEventsViewModel", "❌ Error en búsqueda", exception)
-                    }
-                )
+                val result = apiService.searchEvents(query)
+                if (result.isSuccess) {
+                    _events.value = result.getOrNull() ?: emptyList()
+                    Log.d("BlogEventsViewModel", "Búsqueda eventos '$query': ${_events.value.size} resultados")
+                } else {
+                    throw result.exceptionOrNull() ?: Exception("Error desconocido")
+                }
             } catch (e: Exception) {
-                _errorMessage.value = "Error inesperado en búsqueda: ${e.message}"
-                Log.e("BlogEventsViewModel", "❌ Error inesperado en búsqueda", e)
+                _errorMessage.value = "Error en la búsqueda de eventos: ${e.message}"
+                Log.e("BlogEventsViewModel", "Error en búsqueda de eventos", e)
             } finally {
                 _isLoading.value = false
             }
         }
     }
 
-    /**
-     * Filtrar eventos por tipo de canal
-     */
-    fun filterByChannelType(channelType: ChannelType) {
-        val filteredChannels = _channels.value.filter { it.type == channelType }
-        val filteredChannelIds = filteredChannels.map { it.id }
+    fun filterEventsByChannel(channelId: Int?) {
+        _selectedChannelId.value = channelId
 
-        val currentEvents = _events.value
-        val filteredEvents = currentEvents.filter { event ->
-            event.channelId != null && event.channelId in filteredChannelIds
+        if (channelId == null) {
+            // Mostrar todos los eventos
+            loadAllEvents()
+        } else {
+            viewModelScope.launch {
+                try {
+                    _isLoading.value = true
+                    _errorMessage.value = null
+
+                    val result = apiService.getEventsByChannel(channelId)
+                    if (result.isSuccess) {
+                        _events.value = result.getOrNull() ?: emptyList()
+                        Log.d("BlogEventsViewModel", "Eventos del canal $channelId: ${_events.value.size}")
+                    } else {
+                        throw result.exceptionOrNull() ?: Exception("Error desconocido")
+                    }
+                } catch (e: Exception) {
+                    _errorMessage.value = "Error al filtrar eventos: ${e.message}"
+                    Log.e("BlogEventsViewModel", "Error filtrando eventos por canal", e)
+                } finally {
+                    _isLoading.value = false
+                }
+            }
         }
-
-        _events.value = filteredEvents
-        _selectedChannelId.value = null
-        _selectedOrganizationId.value = null
-
-        Log.d("BlogEventsViewModel", "🏷️ Filtrado por tipo de canal '$channelType': ${filteredEvents.size} eventos")
     }
+    /**
+     * Filtrar eventos por organizacion
+     */
+    fun filterEventsByOrganization(organizationId: Int?) {
+        _selectedOrganizationId.value = organizationId
+
+        if (organizationId == null) {
+            // Mostrar todos los eventos
+            loadAllEvents()
+        } else {
+            viewModelScope.launch {
+                try {
+                    _isLoading.value = true
+                    _errorMessage.value = null
+
+                    val result = apiService.getEventsByOrganization(organizationId)
+                    if (result.isSuccess) {
+                        _events.value = result.getOrNull() ?: emptyList()
+                        Log.d("BlogEventsViewModel", "Eventos de organización $organizationId: ${_events.value.size}")
+                    } else {
+                        throw result.exceptionOrNull() ?: Exception("Error desconocido")
+                    }
+                } catch (e: Exception) {
+                    _errorMessage.value = "Error al filtrar eventos: ${e.message}"
+                    Log.e("BlogEventsViewModel", "Error filtrando eventos por organización", e)
+                } finally {
+                    _isLoading.value = false
+                }
+            }
+        }
+    }
+
+
 
     /**
      * Obtener canales por tipo
      */
-    fun getChannelsByType(channelType: ChannelType): List<Channel> {
-        return _channels.value.filter { it.type == channelType }
-    }
-
-    /**
-     * Obtener canales por organización
-     */
-    fun getChannelsByOrganization(organizationId: Int): List<Channel> {
-        return _channels.value.filter { it.organizationId == organizationId }
+    fun getChannelsByType(type: ChannelType): List<Channel> {
+        return _channels.value.filter { it.type == type }
     }
 
     /**
@@ -267,21 +282,14 @@ class BlogEventsViewModel(
     }
 
     /**
-     * Obtener organización por ID
+     * ✅ NUEVO: Obtener organización por ID desde el estado
      */
-    fun getOrganizationById(organizationId: Int): Organization? {
+    fun getOrganizationFromState(organizationId: Int): Organization? {
         return _organizations.value.find { it.organizationID == organizationId }
     }
 
     /**
-     * Obtener evento específico por ID
-     */
-    fun getEventById(eventId: Int): EventInstituteBlog? {
-        return _events.value.find { it.id == eventId }
-    }
-
-    /**
-     * Limpiar filtros y mostrar todos los eventos
+     * Limpiar filtros
      */
     fun clearFilters() {
         _selectedChannelId.value = null
@@ -297,29 +305,19 @@ class BlogEventsViewModel(
     }
 
     /**
-     * Refrescar datos
+     * Refrescar todos los datos
      */
-    fun refreshData() {
-        val currentChannelId = _selectedChannelId.value
-        val currentOrganizationId = _selectedOrganizationId.value
-
-        when {
-            currentChannelId != null -> loadEventsByChannel(currentChannelId)
-            currentOrganizationId != null -> loadEventsByOrganization(currentOrganizationId)
-            else -> loadAllEvents()
-        }
-
+    fun refresh() {
+        loadAllEvents()
         loadAllChannels()
         loadAllOrganizations()
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        apiService.close()
-    }
+    // ========== FACTORY ==========
 
-    // Factory para crear el ViewModel
-    class Factory(private val apiService: ApiService) : ViewModelProvider.Factory {
+    class Factory(
+        private val apiService: ApiService
+    ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(BlogEventsViewModel::class.java)) {

@@ -1,6 +1,6 @@
 package com.example.academically.data
 
-import android.annotation.SuppressLint
+import  android.annotation.SuppressLint
 import java.time.LocalDate
 import java.time.YearMonth
 

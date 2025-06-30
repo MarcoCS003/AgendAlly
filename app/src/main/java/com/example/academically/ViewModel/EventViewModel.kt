@@ -178,7 +178,10 @@ class EventViewModel(private val eventRepository: EventRepository) : ViewModel()
     fun clearErrorMessage() {
         _errorMessage.value = null
     }
-
+    @RequiresApi(VERSION_CODES.O)
+    fun addEvent(event: Event) {
+        insertEvent(event) // Simplemente llama a insertEvent
+    }
     // Factory para crear instancias del ViewModel
     class Factory(private val eventRepository: EventRepository) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")

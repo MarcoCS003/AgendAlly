@@ -1,11 +1,10 @@
-package com.example.academically.uiAcademicAlly.institute
+package com.example.academically.uiAcademicAlly.Organization
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -46,14 +45,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import com.example.academically.R
 import com.example.academically.ViewModel.EventViewModel
@@ -65,7 +62,6 @@ import com.example.academically.data.EventNotification
 import com.example.academically.data.api.EventItemType
 import com.example.academically.uiAcademicAlly.calendar.EventInfoItem
 import com.example.academically.uiAcademicAlly.calendar.formatEventDate
-import io.ktor.client.plugins.logging.Logger
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 

@@ -102,17 +102,6 @@ fun EventDetailCardWithViewModel(
                     )
                 }
 
-                // Imagen del Evento
-                if (event.imagePath.isNotEmpty()) {
-                    Image(
-                        painter = painterResource(id = event.imagePath.toInt()),
-                        contentDescription = "Imagen del evento",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp, horizontal = 8.dp)
-                    )
-                    Spacer(Modifier.padding(5.dp))
-                }
 
                 // Información de fecha
                 EventInfoItem(
