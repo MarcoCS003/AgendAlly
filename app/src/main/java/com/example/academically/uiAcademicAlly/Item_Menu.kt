@@ -16,7 +16,6 @@ sealed class NavigationItemContent(
     data object Calendar: NavigationItemContent(icon = Icons.Default.CalendarMonth,"Calendar", "Calendar" )
     data object Schedule: NavigationItemContent(icon = Icons.Default.AccessTime,"Schedule", "Schedule" )
     data object Institute: NavigationItemContent(icon = Icons.Default.AccountBalance,"Institute", "Institute" )
-    data object Settings: NavigationItemContent(icon = Icons.Default.Settings,"Settings", "Settings" )
 
     // Navegacion fuera de la Barra de navegacion
 

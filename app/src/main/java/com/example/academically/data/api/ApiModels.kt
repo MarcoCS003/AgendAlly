@@ -1,5 +1,6 @@
 package com.example.academically.data.api
 
+import com.example.academically.data.EventCategory
 import kotlinx.serialization.Serializable
 
 // Enums para tipos de items (debe coincidir con el backend)
@@ -47,13 +48,6 @@ enum class ChannelType {
     ADMINISTRATIVE  // Administrativo (Servicios Escolares, etc.)
 }
 
-@Serializable
-enum class EventType {
-    PERSONAL,       // Evento creado por el estudiante
-    SUBSCRIBED,     // Evento de canal suscrito
-    HIDDEN         // Evento suscrito pero oculto por el estudiante
-}
-
 // ============== MODELOS PRINCIPALES ==============
 
 // ✅ ORGANIZATION (antes Institute)
@@ -85,12 +79,11 @@ data class Organization(
 @Serializable
 data class Channel(
     val id: Int,
-    val organizationId: Int,
-    val organizationName: String,
+    val organizationId: Int, // ✅ CAMBIO: instituteId -> organizationId
+    val organizationName: String, // Para mostrar en frontend
     val name: String,
     val acronym: String,
     val description: String = "",
-    val type: ChannelType, // ✅ CORREGIDO: era ClientType, ahora es ChannelType
     val email: String? = null,
     val phone: String? = null,
     val isActive: Boolean = true,
@@ -108,17 +101,18 @@ data class EventInstituteBlog(
     val location: String = "",
     val startDate: String? = null,
     val endDate: String? = null,
-    val category: String = "INSTITUTIONAL",
+    val category: EventCategory = EventCategory.PERSONAL,
     val imagePath: String = "",
     val organizationId: Int,
     val channelId: Int? = null,
     val items: List<EventItemBlog> = emptyList(),
     val createdAt: String? = null,
     val updatedAt: String? = null,
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    val colorIndex : Int? = null,
 )
 
-// ✅ ITEM DE EVENTO
+
 @Serializable
 data class EventItemBlog(
     val id: Int,
@@ -129,7 +123,7 @@ data class EventItemBlog(
     val iconName: String? = null
 )
 
-// ✅ USUARIO
+
 @Serializable
 data class User(
     val id: Int,
@@ -171,63 +165,6 @@ data class GoogleAuthRequest(
     val organizationId: Int? = null
 )
 
-@Serializable
-data class AuthResponse(
-    val success: Boolean,
-    val user: User? = null,
-    val token: String? = null,
-    val expiresAt: String? = null,
-    val message: String? = null,
-    val assignedRole: String? = null,
-    val requiresOrganization: Boolean = false
-)
-
-@Serializable
-data class TokenValidationRequest(
-    val token: String
-)
-
-@Serializable
-data class AdminSetupRequest(
-    val organizationId: Int
-)
-
-// ✅ REQUEST PARA CREAR EVENTO
-@Serializable
-data class CreateEventRequest(
-    val title: String,
-    val shortDescription: String = "",
-    val longDescription: String = "",
-    val location: String = "",
-    val startDate: String? = null,
-    val endDate: String? = null,
-    val category: String = "INSTITUTIONAL",
-    val imagePath: String = "",
-    val organizationId: Int,
-    val channelId: Int? = null,
-    val items: List<EventItemBlog> = emptyList()
-)
-
-// ✅ REQUEST PARA AGREGAR ORGANIZACIÓN
-@Serializable
-data class AddOrganizationRequest(
-    val organizationID: Int,
-    val channelID: Int
-)
-
-// ✅ SUSCRIPCIONES
-@Serializable
-data class SubscribeToChannelRequest(
-    val channelId: Int,
-    val notificationsEnabled: Boolean = true
-)
-
-@Serializable
-data class UpdateSubscriptionRequest(
-    val notificationsEnabled: Boolean
-)
-
-// ============== RESPUESTAS DEL API ==============
 
 // ✅ RESPUESTA DE ORGANIZACIONES
 @Serializable

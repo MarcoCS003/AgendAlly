@@ -88,4 +88,11 @@ interface EventDao {
 
     @Query("DELETE FROM event_notifications WHERE event_id = :eventId")
     suspend fun deleteEventNotification(eventId: Int)
+
+
+    @Query("UPDATE events SET is_active= 0 WHERE id = :eventId")
+    suspend fun hideEvent(eventId: Int)
+
+
+
 }

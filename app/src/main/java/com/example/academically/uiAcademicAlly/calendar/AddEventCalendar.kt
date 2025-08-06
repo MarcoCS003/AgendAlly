@@ -52,9 +52,6 @@ fun AddEventScreenWithViewModel(
     val context = LocalContext.current
     val database = AcademicAllyDatabase.getDatabase(context)
     val repository = EventRepository(database.eventDao())
-    val eventViewModel: EventViewModel = viewModel(
-        factory = EventViewModel.Factory(repository)
-    )
 
     var title by remember { mutableStateOf("") }
     var selectedEndDay by remember { mutableStateOf(LocalDate.now()) }
@@ -656,7 +653,6 @@ fun SimpleCalendarView(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 week.forEach { day ->
-                    val currentDate = if (day != null) LocalDate.of(year, month, day) else null
                     val isDateDisabled = day != null && minDate != null &&
                             LocalDate.of(year, month, day).isBefore(minDate)
 

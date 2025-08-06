@@ -297,7 +297,7 @@ fun CalendarArray(
 
                         // Verificamos si hay un evento para este día
                         val processedEvent = processedEvents[day]
-                        if (processedEvent != null) {
+                        if (processedEvent != null && processedEvent.event.isActive) {
                             // Si hay eventos adicionales, usamos MultiEventDayView
                             if (processedEvent.additionalEvents.isNotEmpty()) {
                                 MultiEventDayView(

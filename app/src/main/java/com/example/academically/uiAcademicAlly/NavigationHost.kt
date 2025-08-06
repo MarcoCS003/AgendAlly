@@ -29,7 +29,6 @@ import com.example.academically.uiAcademicAlly.institute.EventBlogScreenWithAPI
 import com.example.academically.uiAcademicAlly.schedule.AddScheduleActivityScreenWithViewModel
 import com.example.academically.uiAcademicAlly.schedule.EditScheduleActivityScreen
 import com.example.academically.uiAcademicAlly.schedule.ScheduleScreenWithViewModel
-import com.example.academically.uiAcademicAlly.settings.ConfigurationScreen
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -62,7 +61,7 @@ fun NavigationHost(
     )
 
     val organizationViewModel: OrganizationViewModel = viewModel(
-        factory = OrganizationViewModel.Factory(organizationRepository)
+        factory = OrganizationViewModel.Factory(organizationRepository, eventRepository)
     )
 
     NavHost(
@@ -86,9 +85,7 @@ fun NavigationHost(
         composable(NavigationItemContent.AddEvent.ruta) {
             AddEventScreenWithViewModel(
                 viewModel = eventViewModel,
-                onBack = {
-                    navController.navigateUp()
-                }
+                onBack = { navController.navigateUp() }
             )
         }
 
@@ -117,7 +114,8 @@ fun NavigationHost(
                 onAddOrganizationClick = {
                     // Navegar a búsqueda de organizaciones
                     navController.navigate(NavigationItemContent.AddOrganization.ruta)
-                }
+                },
+                viewModel = organizationViewModel
             )
         }
 
@@ -125,7 +123,8 @@ fun NavigationHost(
             OrganizationInfoScreen(
                 onBackPressed = {
                     navController.navigateUp()
-                }
+                },
+                blogEventsViewModel = blogEventsViewModel
             )
         }
 
@@ -194,9 +193,5 @@ fun NavigationHost(
             }
         }
 
-        // ========== CONFIGURACIÓN ==========
-        composable(NavigationItemContent.Settings.ruta) {
-            ConfigurationScreen()
-        }
     }
 }

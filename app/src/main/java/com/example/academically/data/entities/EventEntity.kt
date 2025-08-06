@@ -3,6 +3,7 @@ package com.example.academically.data.entities
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.academically.data.EventCategory
 
 @Entity(tableName = "events")
 data class EventEntity(
@@ -31,11 +32,17 @@ data class EventEntity(
     val endDate: String, // Almacenado como string en formato ISO
 
     @ColumnInfo(name = "category_id")
-    val categoryId: Int,
+    val categoryId: EventCategory,
 
     @ColumnInfo(name = "image_path")
     val imagePath: String = "",
 
     @ColumnInfo(name = "shape")
-    val shape: String = "RoundedFull" // Almacenado como string
+    val shape: String? = "RoundedFull", // Almacenado como string
+
+    @ColumnInfo(name = "organization_id")
+    val organizationId: Int? = null,
+
+    @ColumnInfo(name = "is_active")
+    val isActive: Boolean = true
 )

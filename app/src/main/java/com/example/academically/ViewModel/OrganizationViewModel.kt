@@ -1,13 +1,18 @@
 package com.example.academically.ViewModel
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.academically.data.EventAdapter
+import com.example.academically.data.api.ApiService
 import com.example.academically.data.api.Organization
 import com.example.academically.data.entities.SubscriptionEntity
 import com.example.academically.data.mappers.toApiModel
 import com.example.academically.data.mappers.toEntityWithSubscriptions
 import com.example.academically.data.repositorty.OrganizationRepository
+import com.example.academically.data.repository.EventRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,7 +20,8 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
 class OrganizationViewModel(
-    private val repository: OrganizationRepository
+    private val repository: OrganizationRepository,
+    private val eventRepository: EventRepository
 ) : ViewModel() {
 
     // ========== STATES ==========
@@ -78,6 +84,46 @@ class OrganizationViewModel(
             } catch (e: Exception) {
                 _errorMessage.value = "Error al guardar organización: ${e.message}"
                 _isLoading.value = false
+            }
+        }
+    }
+
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun downloadOrganizationCalendar(
+        organizationId: Int,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+
+                val apiService = ApiService()
+                val result = apiService.getCalendarEventsByOrganization(organizationId)
+
+                result.onSuccess { serverEvents ->
+
+                    // Convertir y guardar nuevos eventos
+                    serverEvents.forEach { serverEvent ->
+                        val localEvent = EventAdapter.fromCalendarEvent(
+                            serverEvent,
+                            organizationId
+                        )
+                        eventRepository.insertEvent(localEvent)
+                    }
+
+                    _isLoading.value = false
+                    onSuccess()
+
+                }.onFailure { error ->
+                    _isLoading.value = false
+                    onError(error.message ?: "Error desconocido")
+                }
+
+            } catch (e: Exception) {
+                _isLoading.value = false
+                onError(e.message ?: "Error de conexión")
             }
         }
     }
@@ -180,12 +226,16 @@ class OrganizationViewModel(
     // ========== FACTORY ==========
 
     class Factory(
-        private val repository: OrganizationRepository
+        private val repository: OrganizationRepository,
+        private val eventRepository: EventRepository
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(OrganizationViewModel::class.java)) {
-                return OrganizationViewModel(repository) as T
+                return OrganizationViewModel(
+                    repository,
+                    eventRepository
+                ) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }

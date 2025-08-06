@@ -52,7 +52,7 @@ dependencies {
     // ViewModel
     implementation (libs.androidx.lifecycle.viewmodel.ktx)
     implementation (libs.androidx.lifecycle.viewmodel.compose)
-    implementation (libs.androidx.lifecycle.runtime.ktx.v270)
+    implementation (libs.androidx.lifecycle.runtime.ktx)
 
     // Coroutines
     implementation (libs.kotlinx.coroutines.android)

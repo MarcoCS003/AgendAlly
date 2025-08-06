@@ -7,7 +7,6 @@ import io.ktor.client.engine.android.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
-import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
@@ -29,7 +28,7 @@ class ApiService {
         }
     }
 
-    private val baseUrl = "https://academic-ally-backend-113306869747.us-central1.run.app/api/"
+    private val baseUrl = "https://agendally-backend-test-113306869747.us-central1.run.app/api/"
 
     // ==================== ORGANIZACIONES ====================
 
@@ -199,7 +198,33 @@ class ApiService {
             Result.failure(e)
         }
     }
+    suspend fun getBlogEventsByOrganization(organizationId: Int): Result<List<EventInstituteBlog>> {
+        return try {
+            val response: BlogEventsResponse = client.get("$baseUrl/events/blog/$organizationId") {
+                header("X-Client-Type", "ANDROID_STUDENT")
+            }.body()
 
+            Log.i("ApiService", "✅ Eventos de blog obtenidos: ${response.total}")
+            Result.success(response.events)
+        } catch (e: Exception) {
+            Log.e("ApiService", "❌ Error obteniendo eventos de blog", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getCalendarEventsByOrganization(organizationId: Int): Result<List<EventInstituteBlog>> {
+        return try {
+            val response: BlogEventsResponse = client.get("$baseUrl/events/calendar/$organizationId") {
+                header("X-Client-Type", "ANDROID_STUDENT")
+            }.body()
+
+            Log.i("ApiService", "✅ Eventos de calendario obtenidos: ${response.total}")
+            Result.success(response.events)
+        } catch (e: Exception) {
+            Log.e("ApiService", "❌ Error obteniendo eventos de calendario", e)
+            Result.failure(e)
+        }
+    }
     /**
      * Obtener eventos por canal
      */
@@ -230,9 +255,7 @@ class ApiService {
         }
     }
 
-    /**
-     * Obtener eventos próximos
-     */
+
     suspend fun getUpcomingEvents(): Result<List<EventInstituteBlog>> {
         return try {
             val response: UpcomingEventsResponse = client.get("$baseUrl/events/upcoming").body()
@@ -258,96 +281,7 @@ class ApiService {
         }
     }
 
-    // ==================== SUSCRIPCIONES ====================
 
-    /**
-     * Suscribirse a un canal
-     */
-    suspend fun subscribeToChannel(
-        channelId: Int,
-        authToken: String,
-        notificationsEnabled: Boolean = true
-    ): Result<SuccessResponse> {
-        return try {
-            val request = SubscribeToChannelRequest(channelId, notificationsEnabled)
-            val response: SuccessResponse = client.post("$baseUrl/subscriptions") {
-                header("Authorization", "Bearer $authToken")
-                header("X-Client-Type", "ANDROID_STUDENT")
-                contentType(ContentType.Application.Json)
-                setBody(request)
-            }.body()
-
-            Log.i("ApiService", "✅ Suscripción exitosa al canal $channelId")
-            Result.success(response)
-        } catch (e: Exception) {
-            Log.e("ApiService", "❌ Error suscribiéndose al canal", e)
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Obtener suscripciones del usuario
-     */
-    suspend fun getUserSubscriptions(authToken: String): Result<List<UserSubscription>> {
-        return try {
-            val response: UserSubscriptionsResponse = client.get("$baseUrl/subscriptions") {
-                header("Authorization", "Bearer $authToken")
-                header("X-Client-Type", "ANDROID_STUDENT")
-            }.body()
-
-            Log.i("ApiService", "✅ Suscripciones obtenidas: ${response.total}")
-            Result.success(response.subscriptions)
-        } catch (e: Exception) {
-            Log.e("ApiService", "❌ Error obteniendo suscripciones", e)
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Desuscribirse de un canal
-     */
-    suspend fun unsubscribeFromChannel(
-        channelId: Int,
-        authToken: String
-    ): Result<SuccessResponse> {
-        return try {
-            val response: SuccessResponse = client.delete("$baseUrl/subscriptions/$channelId") {
-                header("Authorization", "Bearer $authToken")
-                header("X-Client-Type", "ANDROID_STUDENT")
-            }.body()
-
-            Log.i("ApiService", "✅ Desuscripción exitosa del canal $channelId")
-            Result.success(response)
-        } catch (e: Exception) {
-            Log.e("ApiService", "❌ Error desuscribiéndose del canal", e)
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Actualizar notificaciones de suscripción
-     */
-    suspend fun updateSubscriptionNotifications(
-        channelId: Int,
-        authToken: String,
-        notificationsEnabled: Boolean
-    ): Result<SuccessResponse> {
-        return try {
-            val request = UpdateSubscriptionRequest(notificationsEnabled)
-            val response: SuccessResponse = client.put("$baseUrl/subscriptions/$channelId") {
-                header("Authorization", "Bearer $authToken")
-                header("X-Client-Type", "ANDROID_STUDENT")
-                contentType(ContentType.Application.Json)
-                setBody(request)
-            }.body()
-
-            Log.i("ApiService", "✅ Notificaciones actualizadas para canal $channelId")
-            Result.success(response)
-        } catch (e: Exception) {
-            Log.e("ApiService", "❌ Error actualizando notificaciones", e)
-            Result.failure(e)
-        }
-    }
 
     /**
      * Cerrar cliente HTTP

@@ -50,6 +50,17 @@ class EventViewModel(private val eventRepository: EventRepository) : ViewModel()
         fetchAllEvents()
     }
 
+    fun hideEventCalendarUI(event: Event){
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                eventRepository.hideEvent(event)
+            }catch (e: Exception){
+                _isLoading.value = false
+            }
+        }
+    }
+
     // Cargar todos los eventos
     @RequiresApi(VERSION_CODES.O)
     fun fetchAllEvents() {
@@ -140,6 +151,9 @@ class EventViewModel(private val eventRepository: EventRepository) : ViewModel()
             }
         }
     }
+
+
+
 
     // Actualizar un evento existente
     @RequiresApi(VERSION_CODES.O)

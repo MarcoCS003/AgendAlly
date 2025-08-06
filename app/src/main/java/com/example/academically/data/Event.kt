@@ -1,7 +1,6 @@
 package com.example.academically.data
 
 import android.annotation.SuppressLint
-import android.media.Image
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -16,17 +15,15 @@ import com.example.academically.ui.theme.LightThemeScheduleColors
 import java.time.LocalDate
 import java.time.YearMonth
 
-data class EventCategory(
-    val id: Int,
-    val name: String,
-    val color: Color
-) {
-    companion object {
-        val INSTITUTIONAL = EventCategory(1, "Institucional", Color(0xFF2196F3)) // Azul
-        val CAREER = EventCategory(2, "Carrera", Color(0xFF4CAF50)) // Verde
-        val PERSONAL = EventCategory(3, "Personal", Color(0xFFFF9800)) // Naranja
-    }
+enum class EventCategory(
+
+){ BLOG_EVENT,
+    CALENDAR_EVENT,
+    PERSONAL,
 }
+
+
+
 
 
 data class EventItem(
@@ -77,7 +74,9 @@ data class Event(
     val imagePath: String = "",
     val items: List<EventItem> = emptyList(),
     val notification: EventNotification? = null,
+    val isActive: Boolean = true,
     val mesID: Int? = null,
+    val organizationId: Int? = null,
     val shape: EventShape = EventShape.RoundedFull
 ) {
     // Resto del código...

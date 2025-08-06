@@ -113,8 +113,7 @@ fun AdaptiveNavigationRail(navController: NavHostController) {
     val menuItems = listOf(
         NavigationItemContent.Calendar,
         NavigationItemContent.Schedule,
-        NavigationItemContent.Institute,
-        NavigationItemContent.Settings
+        NavigationItemContent.Institute
     )
 
     val currentRoute = currentRoute(navController)
@@ -196,7 +195,6 @@ fun NavegacionInferior(navController: NavHostController) {
         NavigationItemContent.Calendar,
         NavigationItemContent.Schedule,
         NavigationItemContent.Institute,
-        NavigationItemContent.Settings
     )
 
     val currentRoute = currentRoute(navController)

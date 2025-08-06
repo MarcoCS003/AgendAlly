@@ -550,7 +550,7 @@ fun CardEventBlogPreview() {
                     imagePath = R.drawable.seminario.toString(), // Esto funcionará
                     startDate = LocalDate.of(2025, 11, 28),
                     endDate = LocalDate.of(2025, 11, 29),
-                    category = EventCategory.CAREER,
+                    category = EventCategory.PERSONAL,
                     color = Color(0xFF00BCD4),
                     notification = EventNotification(
                         id = 1,

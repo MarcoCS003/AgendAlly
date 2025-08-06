@@ -29,15 +29,11 @@ fun EventWithDetails.toDomainModel(): Event {
         colorIndex = this.event.colorIndex,
         startDate = if (this.event.startDate.isNotEmpty()) LocalDate.parse(this.event.startDate) else null,
         endDate = if (this.event.endDate.isNotEmpty()) LocalDate.parse(this.event.endDate) else null,
-        category = when (this.event.categoryId) {
-            1 -> EventCategory.INSTITUTIONAL
-            2 -> EventCategory.CAREER
-            else -> EventCategory.PERSONAL
-        },
+        category = this.event.categoryId,
         imagePath = this.event.imagePath,
         items = this.items.map { it.toDomainModel() },
         notification = this.notification?.toDomainModel(),
-        shape = parseEventShape(this.event.shape)
+        shape = parseEventShape(this.event.shape!!)
     )
 }
 
@@ -52,7 +48,7 @@ fun Event.toEntity(): EventEntity {
         colorIndex = this.colorIndex,
         startDate = this.startDate?.toString() ?: "",
         endDate = this.endDate?.toString() ?: "",
-        categoryId = this.category.id,
+        categoryId = this.category,
         imagePath = this.imagePath,
         shape = this.shape.javaClass.simpleName
     )

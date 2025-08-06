@@ -260,17 +260,24 @@ fun EditEventScreenWithViewModel(
                         .padding(vertical = 8.dp)
                         .clickable { showDatePickerStart = true }
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.DateRange,
-                        contentDescription = "Fecha",
-                        modifier = Modifier.size(32.dp)
-                    )
-
-                    Text(
-                        text = selectedCreateStartDay.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(start = 18.dp)
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Fecha de inicio",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Row(modifier = Modifier.clickable {showDatePickerStart = true}) {
+                            Icon(
+                                imageVector = Icons.Default.DateRange, contentDescription = "Fecha de inicio",
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Text(
+                                text =selectedCreateStartDay.toString(),
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
+                    }
                 }
             }
 

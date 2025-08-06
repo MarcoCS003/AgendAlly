@@ -265,15 +265,6 @@ class BlogEventsViewModel(
         }
     }
 
-
-
-    /**
-     * Obtener canales por tipo
-     */
-    fun getChannelsByType(type: ChannelType): List<Channel> {
-        return _channels.value.filter { it.type == type }
-    }
-
     /**
      * Obtener canal por ID
      */

@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.example.academically.data.Event
 import com.example.academically.data.dao.EventDao
+import com.example.academically.data.entities.EventEntity
 import com.example.academically.data.mappers.toDomainModel
 import com.example.academically.data.mappers.toEntity
 import kotlinx.coroutines.flow.Flow
@@ -51,11 +52,15 @@ class EventRepository(private val eventDao: EventDao) {
     suspend fun deleteEvent(event: Event) {
         eventDao.deleteEvent(event.toEntity())
     }
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun hideEvent(event: Event){
+        eventDao.hideEvent(event.id)
+    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun preloadEvents(sampleEvents: List<Event>) {
         // Asegurémonos de que estamos recibiendo eventos y no cualquier objeto
-        if (true && sampleEvents.isNotEmpty() && sampleEvents[0] is Event) {
+        if (sampleEvents.isNotEmpty()) {
             // Insertamos cada evento de la lista en la base de datos
             sampleEvents.forEach { event ->
                 try {

@@ -34,6 +34,7 @@ import com.example.academically.data.EventShape
 import com.example.academically.data.api.*
 import com.example.academically.data.database.AcademicAllyDatabase
 import com.example.academically.data.repositorty.OrganizationRepository
+import com.example.academically.data.repository.EventRepository
 import com.example.academically.uiAcademicAlly.Organization.ChannelSubscriptionDialog
 import kotlinx.coroutines.delay
 import java.time.LocalDate
@@ -53,8 +54,10 @@ fun EventBlogScreenWithAPI(
     val context = LocalContext.current
     val database = AcademicAllyDatabase.getDatabase(context)
     val organizationRepository = OrganizationRepository(database.organizationDao())
+    val eventRepository = EventRepository(database.eventDao())
     val organizationViewModel: OrganizationViewModel = viewModel(
-        factory = OrganizationViewModel.Factory(organizationRepository)
+        factory = OrganizationViewModel.Factory(organizationRepository, eventRepository)
+
     )
 
     // Estados del ViewModel
@@ -224,17 +227,6 @@ fun EventBlogScreenWithAPI(
                             )
                         },
                         selected = selectedChannelId == channel.id,
-                        leadingIcon = {
-                            Icon(
-                                when (channel.type) {
-                                    ChannelType.CAREER -> Icons.Default.School
-                                    ChannelType.DEPARTMENT -> Icons.Default.Business
-                                    ChannelType.ADMINISTRATIVE -> Icons.Default.AccountBox
-                                },
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
                     )
                 }
             }
@@ -495,7 +487,7 @@ fun EventCardBlogAPI(
                     }
                     if (event.imagePath != "") {
                         AsyncImage(
-                            model = "https://academic-ally-backend-113306869747.us-central1.run.app/images/${event.imagePath}",
+                            model = "https://agendally-backend-test-113306869747.us-central1.run.app/api/images/${event.imagePath}",
                             contentDescription = null,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -665,27 +657,12 @@ fun EventDetailCardBlogAPI(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(bottom = 12.dp)
                     ) {
-                        Icon(
-                            when (channel.type) {
-                                ChannelType.CAREER -> Icons.Default.School
-                                ChannelType.DEPARTMENT -> Icons.Default.Business
-                                ChannelType.ADMINISTRATIVE -> Icons.Default.AccountBox
-                            },
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
                                 text = "${organization.acronym} - ${channel.name}",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                text = "${channel.type.name} • ${organization.name}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -715,7 +692,7 @@ fun EventDetailCardBlogAPI(
                 // Imagen del evento si existe
                 if (event.imagePath.isNotEmpty()) {
                     AsyncImage(
-                        model = "https://academic-ally-backend-113306869747.us-central1.run.app/images/${event.imagePath}",
+                        model = "https://agendally-backend-test-113306869747.us-central1.run.app/api/images/${event.imagePath}",
                         contentDescription = event.shortDescription,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -764,8 +741,9 @@ fun EventDetailCardBlogAPI(
                     }
                 }
 
-                // Categoría
-                Row(
+                // Categoría la tengo que implementar bien
+
+                /*Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(vertical = 4.dp)
                 ) {
@@ -777,11 +755,11 @@ fun EventDetailCardBlogAPI(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = event.category,
+                        text = event.category.toString(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                }
+                }*/
 
                 // Descripción completa
                 if (event.longDescription.isNotEmpty()) {
@@ -883,6 +861,45 @@ fun EventDetailCardBlogAPI(
 
 @RequiresApi(Build.VERSION_CODES.O)
 private fun convertToLocalEvent(blogEvent: EventInstituteBlog): Event {
+    // ✅ Función auxiliar para parsear fechas de forma segura
+    fun parseDate(dateString: String?): LocalDate? {
+        return try {
+            when {
+                dateString.isNullOrBlank() -> null
+                else -> {
+                    // Intentar diferentes formatos de fecha
+                    when {
+                        dateString.contains("T") -> {
+                            // Formato ISO con tiempo: "2024-12-25T10:30:00"
+                            LocalDate.parse(dateString.substring(0, 10))
+                        }
+                        dateString.matches(Regex("\\d{4}-\\d{2}-\\d{2}")) -> {
+                            // Formato ISO simple: "2024-12-25"
+                            LocalDate.parse(dateString)
+                        }
+                        dateString.matches(Regex("\\d{2}/\\d{2}/\\d{4}")) -> {
+                            // Formato DD/MM/YYYY: "25/12/2024"
+                            val parts = dateString.split("/")
+                            LocalDate.of(parts[2].toInt(), parts[1].toInt(), parts[0].toInt())
+                        }
+                        else -> {
+                            // Intentar parseo directo como último recurso
+                            LocalDate.parse(dateString)
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            // Si falla el parseo, usar fecha actual como fallback
+            println("Error parsing date '$dateString': ${e.message}")
+            LocalDate.now()
+        }
+    }
+
+    // ✅ Parsear fechas de forma segura
+    val startDate = parseDate(blogEvent.startDate)
+    val endDate = parseDate(blogEvent.endDate)
+
     return Event(
         id = blogEvent.id,
         title = blogEvent.title,
@@ -890,11 +907,11 @@ private fun convertToLocalEvent(blogEvent: EventInstituteBlog): Event {
         longDescription = blogEvent.longDescription,
         location = blogEvent.location,
         colorIndex = 0, // Color por defecto
-        startDate = LocalDate.parse(blogEvent.startDate),
-        endDate = LocalDate.parse(blogEvent.endDate),
-        category = EventCategory.INSTITUTIONAL,
+        startDate = startDate ?: LocalDate.now(), // ✅ Usar fecha actual si es null
+        endDate = endDate ?: startDate ?: LocalDate.now(), // ✅ Usar startDate o fecha actual si es null
+        category = EventCategory.BLOG_EVENT,
         imagePath = blogEvent.imagePath,
-        shape = EventShape.RoundedFull, // Forma por defecto
+        shape = EventShape.RoundedFull,
         notification = null,
         mesID = null
     )

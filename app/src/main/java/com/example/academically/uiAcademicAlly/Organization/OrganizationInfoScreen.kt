@@ -21,30 +21,31 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.academically.ViewModel.BlogEventsViewModel
+import com.example.academically.ViewModel.EventViewModel
 import com.example.academically.ViewModel.OrganizationViewModel
 import com.example.academically.data.api.ApiService
 import com.example.academically.data.api.Organization
 import com.example.academically.data.database.AcademicAllyDatabase
 import com.example.academically.data.repositorty.OrganizationRepository
+import com.example.academically.data.repository.EventRepository
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrganizationInfoScreen(
     onBackPressed: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    blogEventsViewModel: BlogEventsViewModel,
 ) {
     // Setup ViewModels
     val context = LocalContext.current
     val apiService = ApiService()
-    val blogEventsViewModel: BlogEventsViewModel = viewModel(
-        factory = BlogEventsViewModel.Factory(apiService)
-    )
 
     val database = AcademicAllyDatabase.getDatabase(context)
     val repository = OrganizationRepository(database.organizationDao())
+    val eventRepository = EventRepository(database.eventDao())
     val organizationViewModel: OrganizationViewModel = viewModel(
-        factory = OrganizationViewModel.Factory(repository)
+        factory = OrganizationViewModel.Factory(repository, eventRepository)
     )
 
     // Estados

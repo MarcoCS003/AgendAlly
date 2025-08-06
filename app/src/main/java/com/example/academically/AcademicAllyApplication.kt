@@ -3,12 +3,9 @@ package com.example.academically
 import android.app.Application
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Person
 import com.example.academically.data.Event
 import com.example.academically.data.EventCategory
-import com.example.academically.data.EventItem
+
 import com.example.academically.data.EventNotification
 import com.example.academically.data.EventShape
 import com.example.academically.data.Schedule
@@ -136,14 +133,14 @@ class AcademicAllyApplication : Application() {
                 colorIndex = 13, // Índice del color
                 startDate = LocalDate.of(2025, 1, 1),
                 endDate = LocalDate.of(2025, 1, 1),
-                category = EventCategory.INSTITUTIONAL
+                category = EventCategory.PERSONAL
             ), Event(
                 id = 2,
                 colorIndex = 13,
                 title = "Días inhábiles",
                 startDate = LocalDate.of(2025, 2, 3),
                 endDate = LocalDate.of(2025, 2, 3),
-                category = EventCategory.INSTITUTIONAL
+                category = EventCategory.PERSONAL
 
             ),
             Event(
@@ -160,7 +157,7 @@ class AcademicAllyApplication : Application() {
                 title = "Periodo vacacional ",
                 startDate = LocalDate.of(2025, 7, 7),
                 endDate = LocalDate.of(2025, 7, 31),
-                category = EventCategory.INSTITUTIONAL
+                category = EventCategory.PERSONAL
             ),
 
              Event(
@@ -169,7 +166,7 @@ class AcademicAllyApplication : Application() {
                 title = "Actividades intersemestrales",
                 startDate = LocalDate.of(2025, 6, 9),
                 endDate = LocalDate.of(2025, 7, 4),
-                category = EventCategory.INSTITUTIONAL
+                category = EventCategory.PERSONAL
             ),
             Event(
                 id = 6,
@@ -177,7 +174,7 @@ class AcademicAllyApplication : Application() {
                 title = "Actividades intersemestrales",
                 startDate = LocalDate.of(2025, 1, 8),
                 endDate = LocalDate.of(2025, 1, 17),
-                category = EventCategory.INSTITUTIONAL
+                category = EventCategory.PERSONAL
             ),
 
             Event(
@@ -186,7 +183,7 @@ class AcademicAllyApplication : Application() {
                 title = "Inicio de clases",
                 startDate = LocalDate.of(2025, 1, 26),
                 endDate = LocalDate.of(2025, 1, 26),
-                category = EventCategory.INSTITUTIONAL
+                category = EventCategory.PERSONAL
             ),
 
             Event(
@@ -195,7 +192,7 @@ class AcademicAllyApplication : Application() {
                 title = "Días inhábiles",
                 startDate = LocalDate.of(2025, 3, 17),
                 endDate = LocalDate.of(2025, 3, 17),
-                category = EventCategory.INSTITUTIONAL
+                category = EventCategory.PERSONAL
 
             ),
             Event(
@@ -204,7 +201,7 @@ class AcademicAllyApplication : Application() {
                 title = "Periodo vacacional",
                 startDate = LocalDate.of(2025, 1, 1),
                 endDate = LocalDate.of(2025, 1, 7),
-                category = EventCategory.INSTITUTIONAL
+                category = EventCategory.PERSONAL
             ),
             Event(
                 id = 10,
@@ -212,7 +209,7 @@ class AcademicAllyApplication : Application() {
                 title = "Periodo vacacional",
                 startDate = LocalDate.of(2025, 4, 14),
                 endDate = LocalDate.of(2025, 4, 25),
-                category = EventCategory.INSTITUTIONAL
+                category = EventCategory.PERSONAL
             ),
             Event(
                 id = 11,
@@ -220,7 +217,7 @@ class AcademicAllyApplication : Application() {
                 title = "Inicio de clases",
                 startDate = LocalDate.of(2025, 1, 26),
                 endDate = LocalDate.of(2025, 1, 26),
-                category = EventCategory.INSTITUTIONAL,
+                category = EventCategory.PERSONAL,
                 shape = EventShape.Circle
             ),
             // Evento que abarca varios meses
@@ -230,14 +227,14 @@ class AcademicAllyApplication : Application() {
                 title = "Días inhábiles",
                 startDate = LocalDate.of(2025, 5, 1),
                 endDate = LocalDate.of(2025, 5, 1),
-                category = EventCategory.INSTITUTIONAL
+                category = EventCategory.PERSONAL
             ), Event(
                 id = 13,
                 colorIndex =13,
                 title = "Días inhábiles",
                 startDate = LocalDate.of(2025, 5, 5),
                 endDate = LocalDate.of(2025, 5, 5),
-                category = EventCategory.INSTITUTIONAL
+                category = EventCategory.PERSONAL
             ),
             Event(
                 id = 14,
@@ -245,7 +242,7 @@ class AcademicAllyApplication : Application() {
                 title = "Días inhábiles",
                 startDate = LocalDate.of(2025, 5, 15),
                 endDate = LocalDate.of(2025, 5, 15),
-                category = EventCategory.INSTITUTIONAL
+                category = EventCategory.PERSONAL
             ),
             Event(
                 id = 15,
@@ -253,7 +250,7 @@ class AcademicAllyApplication : Application() {
                 title = "Fin de clases",
                 startDate = LocalDate.of(2025, 5, 30),
                 endDate = LocalDate.of(2025, 5, 30),
-                category = EventCategory.INSTITUTIONAL
+                category = EventCategory.PERSONAL
             ),
             Event(
                 id = 16,
@@ -261,7 +258,7 @@ class AcademicAllyApplication : Application() {
                 title = "Incripciones",
                 startDate = LocalDate.of(2025, 1, 20),
                 endDate = LocalDate.of(2025, 1, 21),
-                category = EventCategory.INSTITUTIONAL
+                category = EventCategory.PERSONAL
             ),
             Event(
                 id = 17,
@@ -269,7 +266,7 @@ class AcademicAllyApplication : Application() {
                 title = "Reinscripciones",
                 startDate = LocalDate.of(2025, 1, 22),
                 endDate = LocalDate.of(2025, 1, 24),
-                category = EventCategory.INSTITUTIONAL
+                category = EventCategory.PERSONAL
             ),
             Event(
                 id = 18,
@@ -277,7 +274,7 @@ class AcademicAllyApplication : Application() {
                 title = "Entrega de calificaciones",
                 startDate = LocalDate.of(2025, 6, 5),
                 endDate = LocalDate.of(2025, 6, 6),
-                category = EventCategory.INSTITUTIONAL
+                category = EventCategory.PERSONAL
             ),
 
             Event(
@@ -289,7 +286,7 @@ class AcademicAllyApplication : Application() {
                 imagePath = R.drawable.seminario.toString(),
                 startDate = LocalDate.of(2025, 11, 28),
                 endDate = LocalDate.of(2025, 11, 29),
-                category = EventCategory.CAREER,
+                category = EventCategory.PERSONAL,
                 colorIndex = 12,
                 notification = EventNotification(
                     id = 1,

@@ -96,8 +96,8 @@ fun OrganizationDetailDialog(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Estadísticas
-                    OrganizationStats(organization = organization)
+                    // Estadísticas prximamente
+                    //OrganizationStats(organization = organization)
 
                     Spacer(modifier = Modifier.height(24.dp))
 

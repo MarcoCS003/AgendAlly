@@ -46,7 +46,7 @@ class ScheduleRepository(private val scheduleDao: ScheduleDao) {
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun preloadSchedules(sampleSchedules: List<Schedule>) {
-        if (true && sampleSchedules.isNotEmpty() && sampleSchedules[0] is Schedule) {
+        if (sampleSchedules.isNotEmpty()) {
             sampleSchedules.forEach { schedule ->
                 try {
                     insertSchedule(schedule as Schedule)

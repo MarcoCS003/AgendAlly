@@ -31,7 +31,7 @@ import com.example.academically.data.entities.SubscriptionEntity
         OrganizationEntity::class,
         SubscriptionEntity::class
     ],
-    version = 4, // ⚠️ INCREMENTAR A VERSIÓN 4
+    version = 7, // ⚠️ INCREMENTAR A VERSIÓN 4
     exportSchema = false
 )
 abstract class AcademicAllyDatabase : RoomDatabase() {
@@ -52,7 +52,7 @@ abstract class AcademicAllyDatabase : RoomDatabase() {
                     AcademicAllyDatabase::class.java,
                     "academic_ally_database"
                 )
-                    .fallbackToDestructiveMigration(true) // ⚠️ Para desarrollo, permite migración destructiva
+                    .fallbackToDestructiveMigration(true)
                     .build()
                 INSTANCE = instance
                 instance
