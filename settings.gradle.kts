@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "AcademicAlly"
+rootProject.name = "AgendAlly"
 include(":app")
  

@@ -1,0 +1,368 @@
+@file:Suppress("IMPLICIT_CAST_TO_ANY")
+
+package com.agendally.app.uiAcademicAlly.calendar
+
+import android.annotation.SuppressLint
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.agendally.app.ViewModel.EventViewModel
+import com.agendally.app.data.Event
+import com.agendally.app.data.EventCategory
+import com.agendally.app.data.database.AcademicAllyDatabase
+import com.agendally.app.data.repository.EventRepository
+import com.agendally.app.ui.theme.ScheduleColorsProvider
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
+/**
+ * Tarjeta de detalles del evento que se muestra al seleccionar un evento
+ */
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun EventDetailCardWithViewModel(
+    event: Event,
+    onDismiss: () -> Unit = {},
+    onEditEvent: (Event) -> Unit = {},
+
+
+    ) {
+    // Inicializar ViewModel
+    val context = LocalContext.current
+    val database = AcademicAllyDatabase.getDatabase(context)
+    val repository = EventRepository(database.eventDao())
+    val eventViewModel: EventViewModel = viewModel(
+        factory = EventViewModel.Factory(repository)
+    )
+
+    // Estado para confirmación de eliminación
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+
+    // Estado de carga
+    val isLoading by eventViewModel.isLoading.collectAsState()
+
+    // Estado de error
+    val errorMessage by eventViewModel.errorMessage.collectAsState()
+
+    // Mostrar SnackBar para errores
+    errorMessage?.let { message ->
+        LaunchedEffect(message) {
+            // Aquí puedes mostrar un SnackBar con el mensaje de error
+        }
+    }
+
+    val scrollState = rememberScrollState()
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth()
+                    .verticalScroll(scrollState)
+            ) {
+                // Encabezado con categoría y título
+                EventHeader(event)
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+
+                // Descripción larga si existe
+                if (event.longDescription.isNotEmpty()) {
+                    Text(
+                        text = event.longDescription,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                }
+
+
+                // Información de fecha
+                EventInfoItem(
+                    icon = Icons.Default.DateRange,
+                    text = formatEventDate(event.startDate, event.endDate)
+                )
+
+                // Ubicación si existe
+                if (event.location.isNotEmpty()) {
+                    EventInfoItem(
+                        icon = Icons.Default.LocationOn,
+                        text = event.location
+                    )
+                }
+
+                // Espacio para elementos adicionales
+                if (event.items.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Mostrar cada item del evento
+                    event.items.forEach { item ->
+                        EventInfoItem(
+                            icon = item.icon,
+                            text = item.text
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Botones de acción
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    // Botón de eliminar
+                    IconButton(
+                        onClick = { showDeleteConfirmation = true },
+                        enabled = !isLoading
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Eliminar evento",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+
+                    // Botón de editar (solo para eventos personales)
+                    if (event.category == EventCategory.PERSONAL) { // 3 = PERSONAL
+                        IconButton(
+                            onClick = {
+                                println("DEBUG: Botón de editar presionado para evento: ${event.id}")
+                                onEditEvent(event) // Verificamos que se llama con el evento correcto
+                                onDismiss()
+                            },
+                            enabled = !isLoading
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Editar evento"
+                            )
+                        }
+                    }
+                    //Boton para ocultar
+                    IconButton(
+                        onClick = {eventViewModel.hideEventCalendarUI(event)
+                                  onDismiss()},
+                        enabled = !isLoading
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Visibility,
+                            contentDescription = "Ocultar evento",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // Diálogo de confirmación para eliminar
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text("Eliminar evento") },
+            text = { Text("¿Estás seguro que deseas eliminar este evento?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        // Eliminar el evento
+                        eventViewModel.deleteEvent(event)
+                        showDeleteConfirmation = false
+                        onDismiss()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    ),
+                    enabled = !isLoading
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onError,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Eliminar")
+                    }
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { showDeleteConfirmation = false },
+                    enabled = !isLoading
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+}
+
+/**
+ * Encabezado de la tarjeta de evento con color, categoría y título
+ */
+@Composable
+fun EventHeader(event: Event) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // Círculo con el color del evento
+        val colors = ScheduleColorsProvider.getColors()
+        Box(
+            modifier = Modifier
+                .size(24.dp)
+                .clip(CircleShape)
+                .background(
+                    if (colors.isNotEmpty())
+                        colors[event.colorIndex % colors.size]
+                    else
+                        Color.Gray
+                )
+        )
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // Categoría y título
+        Column {
+            Text(
+                text = "${
+                    when (event.category) {
+                        EventCategory.PERSONAL -> "Personal"
+                        EventCategory.BLOG_EVENT -> "Evento del blog"
+                        EventCategory.CALENDAR_EVENT -> "Evento de calendario"
+                    }
+                }: ${event.title}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+    }
+}
+
+/**
+ * Item de información del evento (icono + texto)
+ */
+
+@Composable
+fun EventInfoItem(
+    icon: ImageVector,
+    text: String,
+    isClickable: Boolean = false,
+    onClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    val itemModifier = if (isClickable && onClick != null) {
+        modifier.clickable { onClick() }
+    } else {
+        modifier
+    }
+
+    Row(
+        modifier = itemModifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (isClickable) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            }
+        )
+    }
+}
+
+/**
+ * Formatea las fechas del evento para mostrarlas en la tarjeta
+ */
+@SuppressLint("NewApi")
+fun formatEventDate(startDate: LocalDate?, endDate: LocalDate?): String {
+    if (startDate == null) return ""
+
+    val formatter = DateTimeFormatter.ofPattern("d 'de' MMMM", Locale("es", "ES"))
+
+    return if (endDate != null && !startDate.isEqual(endDate)) {
+        if (startDate.month != endDate.month) {
+            // Si son meses diferentes, mostrar el mes en ambas fechas
+            "${startDate.format(formatter)} - ${endDate.format(formatter)}"
+        } else {
+            // Si es el mismo mes, solo mostrar el día de inicio y fin con el mes una sola vez
+            "${startDate.dayOfMonth} - ${endDate.dayOfMonth} de ${
+                startDate.month.getDisplayName(
+                    java.time.format.TextStyle.FULL,
+                    java.util.Locale("es", "ES")
+                )
+            }"
+        }
+    } else {
+        startDate.format(formatter)
+    }
+}

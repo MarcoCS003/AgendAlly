@@ -7,19 +7,21 @@ plugins {
 }
 
 android {
-    namespace = "com.example.academically"
+    namespace = "com.agendally.app"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.academically"
+        applicationId = "com.agendally.app"
         minSdk = 24
-        //noinspection OldTargetApi
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        //noinspection EditedTargetSdkVersion,OldTargetApi
+        targetSdk = 35
+        versionCode = 3
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+
+
 
     buildTypes {
         release {
@@ -77,7 +79,7 @@ dependencies {
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.places)
-    implementation(libs.material)// aver si no falla D:
+    implementation(libs.material)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
